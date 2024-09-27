@@ -1,6 +1,8 @@
 ###TO DO####
 # Add subject_taught key to teacher_list, corresponding to subject_studied key to student_list
 # Make lesson dictionary.
+# Make admin dictionary
+# Make sure new keys marry up to arguments passed
 
 import json
 from flask import Flask, jsonify
@@ -47,30 +49,10 @@ def save_student_list():
     with open("student_list.json", "w") as f:
         json.dump(student_list, f, indent=4)
         
-
+admin_list = load_admin_list()
 teacher_list = load_teacher_list()
-'''admin_list = load_admin_list()
+student_list = load_student_list()
 
-student_list = load_student_list()'''
-
-student_list = [        
-        {"login_email": "student2@school.co.uk",                  
-        "hashed_password": "hsiohji9",
-        "student_id": 906,
-        "fname": "Victoria",
-        "lname": "Adams",
-        "DOB": "11.02,85",
-        "lesson_id": 2,
-        "teacher_id": 2},
-        {"login_email": "student3@school.co.uk",                  
-        "hashed_password": "hsiohji9",
-        "student_id": 906,
-        "fname": "Dane",
-        "lname": "Bowers",
-        "DOB": "11.02,85",
-        "lesson_id": 907,
-        "teacher_id": 2}
-        ]
 user_lists = {
     "student_list": student_list,
     "teacher_list": teacher_list
@@ -88,14 +70,10 @@ class Users(Resource):
 
 class Teacher(Resource):
     
-    def get(self, lname):
-        #load_student_list()
-        parser = reqparse.RequestParser()
-        parser.add_argument("fname", type=str, help="enter a last name")
-        args = parser.parse_args()
-        first_name = args.get("fname")
+    def get(self, email):
+        
         for teacher in teacher_list:
-            if first_name == teacher["fname"] and lname == teacher["lname"]:
+            if email == teacher["login_email"]:
                 
                 return teacher, 200
             else:
@@ -105,26 +83,21 @@ class Teacher(Resource):
 
 class AssignedStudent(Resource): 
     
-     def get(self, teacher_id):        
-        teacher_id = int(teacher_id)
+     def get(self, id):        
+        id = int(id)
 
         for student in student_list:
-            #for num in teacher["student_ids"]:                          
-             if teacher_id in student["teacher_id"]:
+            #for num in teacher["ids"]:                          
+             if id in student["id"]:
                     return student, 200
                     continue
         return "User not found", 404    
 
 class Student(Resource):
     
-    def get(self, lname):
-        #load_student_list()
-        parser = reqparse.RequestParser()
-        parser.add_argument("fname", type=str, help="enter a last name")
-        args = parser.parse_args()
-        first_name = args.get("fname")
+    def get(self, email):                
         for student in student_list:
-            if first_name == student["fname"] and lname == student["lname"]:
+            if email == student["login_email"]:
                 
                 return student, 200
             else:
@@ -164,12 +137,12 @@ class Student(Resource):
 
 class AssignedTeacher(Resource): # change to input just student id?
     
-     def get(self, student_id):        
-        student_id = int(student_id)
+     def get(self, id):        
+        id = int(id)
 
         for teacher in teacher_list:
-            #for num in teacher["student_ids"]:                          
-             if student_id in teacher["student_ids"]:
+            #for num in teacher["ids"]:                          
+             if id in teacher["ids"]:
                     return teacher, 200
                     continue
         return "User not found", 404    
@@ -199,24 +172,24 @@ class Admin(Resource):
         
         if teacher_lname:
             
-            # Find what the last teacher_id assigned was and add 1 to this to generate new id.
-            last_teacher_id = 0
+            # Find what the last id assigned was and add 1 to this to generate new id.
+            last_id = 0
             for t in teacher_list:
-                if t["teacher_id"] > last_teacher_id:
-                    last_teacher_id = t["teacher_id"]                    
+                if t["id"] > last_id:
+                    last_id = t["id"]                    
                     continue
             
-            next_teacher_id = last_teacher_id + 1
+            next_id = last_id + 1
 
             teacher = {
                 "login_email": args["login_email"],                  
                 "hashed_password": args["hashed_password"],
-                "teacher_id": next_teacher_id,
+                "id": next_id,
                 "fname": args["fname"],
                 "lname": teacher_lname,
                 "DOB": args["DOB"],
                 "lesson_id": args["lesson_id"],
-                "student_ids": []
+                "ids": []
             }
             teacher_list.append(teacher)
             save_teacher_list()
@@ -226,12 +199,12 @@ class Admin(Resource):
             student = {
                 "login_email": args["login_email"],                  
                 "hashed_password": args["hashed_password"],
-                "student_id": args["teacher_id"],
+                "id": args["id"],
                 "fname": args["fname"],
                 "lname": teacher_lname,
                 "DOB": args["DOB"],
                 "lesson_id": args["lesson_id"],
-                "teacher_id": None # Change logic on class method/cli to assign according to lesson choice. Then assign to teacher
+                "id": None # Change logic on class method/cli to assign according to lesson choice. Then assign to teacher
             }
                         
             student_list.append(teacher)
@@ -240,10 +213,10 @@ class Admin(Resource):
         
 api.add_resource(Users, "/<string:user_list>")
 api.add_resource(Admin, "/users/register/<string:lname>")
-api.add_resource(Teacher, "/users/teachers/<string:lname>")
-api.add_resource(AssignedStudent, "/users/teachers/<int:teacher_id>/assignedstudent")
-api.add_resource(Student, "/users/students/<string:lname>")
-api.add_resource(AssignedTeacher, "/users/students/<int:student_id>/assignedteacher")
+api.add_resource(Teacher, "/users/teachers/<string:email>")
+api.add_resource(AssignedStudent, "/users/teachers/<int:id>/assignedstudent")
+api.add_resource(Student, "/users/students/<string:email>")
+api.add_resource(AssignedTeacher, "/users/students/<int:id>/assignedteacher")
 
  
 app.run(debug=True)

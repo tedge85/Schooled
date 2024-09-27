@@ -1,17 +1,16 @@
 import requests
-
+####NOTES########
 #admin creates student object, calls register method with todd.fname etc
 #If student logs on, how are their methods called when, for example answering questons? API searches automaticalley for self.fname etc
 #...and displays lesson questions. view_questions method needed; submit_answer meethod needed - edit_answer()?
 
-#find user from dictionary, using login then {fname}.view_lesson
-#print methods in cli e.g. print(view_student_info())
-
 #logging on instantiates object - email used as input to get instance variables used within methods.
 ## Update student keys - assigned_teacher_id - automate
-
+# Change student key to assigned teacher?
+## Make admin endpoints to match __init__ variables
+##Change subject_studied to subject so teachers and students can share
 # Admin only assign to main subjects - error handling
-
+# When admin registers a new teacher, student ids are empty but when they assign a new student, if subjects match and student ids are less than 3, they're assigned to first one and teacher student_ids are updated.
 class User():
     
     API_URL = "http://127.0.0.1:5000"
@@ -19,20 +18,29 @@ class User():
     def __init__(self, login_email, password):
         admin = False
         teacher = False
-        student = False
+        student = False                
         
         self.login_email = login_email 
-        self.password = password
+        self.password = password                        
         
-        self.teacher_id = teacher_id
-        self.fname = fname
-        self.lname = lname
-        self.DOB = DOB
-        self.lesson_id = lesson_id
-        self.student_ids = student_ids
-        self.assigned_teacher_id = assigned_teacher_id    ''            
+        if admin:
+            user_path = "admin"
+        elif teacher:
+            user_path = "teachers"
+        else:
+            user_path = "students"
         
-    def view_teacher(self): # Add lesson details
+        ################# Adjust for PEP-8?
+        self.id =  requests.get(f"{self.API_URL}/users/{user_path}/{self.login_email}", headers={"Content-Type": "application/json"}).json()["id"]
+        self.fname = requests.get(f"{self.API_URL}/users/{user_path}/{self.login_email}", headers={"Content-Type": "application/json"}).json()["fname"]
+        self.lname = requests.get(f"{self.API_URL}/users/{user_path}/{self.login_email}", headers={"Content-Type": "application/json"}).json()["lname"]
+        self.DOB = requests.get(f"{self.API_URL}/users/{user_path}/{self.login_email}", headers={"Content-Type": "application/json"}).json()["DOB"]
+        self.subject = requests.get(f"{self.API_URL}/users/{user_path}/{self.login_email}", headers={"Content-Type": "application/json"}).json()["subject"]
+        
+        if not admin:    
+            self.lesson_id = requests.get(f"{self.API_URL}/users/{user_path}/{self.login_email}", headers={"Content-Type": "application/json"}).json()["lesson_id"]
+
+    def view_user_info(self): # Add lesson details
         # Admins calling this method view all teacher info.
         if self.admin:
             headers = {"Content-Type": "application/json"}  
@@ -41,23 +49,14 @@ class User():
             teacher_details = [(teacher["teacher_id"], teacher["fname"], teacher["lname"], teacher["email"]) for teacher in data]
             return(teacher_details)
         # Teachers calling this method view their own info.
-        elif self.teacher:
-            data = {"fname": self.fname,
-                    "lname": self.lname}
-            headers = {"Content-Type": "application/json"}  
-            response = requests.get(f"{self.API_URL}/users/teachers/{self.lname}", headers=headers, json=data)
-            response = response.json()
+        elif self.teacher:                                
         
-            first_name = response["fname"]
-            last_name = response["lname"]
-            email = response["login_email"]
-        
-            return f"Name: {first_name} {last_name}\nEmail: {email}\n"
+            return f"Name: {self.fname} {self.lname}\nEmail: {self.email}\n"
         # Students calling this method view their assigned teacher info.    
         else: 
             data = {"student_id": self.student_id}
             headers = {"Content-Type": "application/json"}  
-            response = requests.get(f"{self.API_URL}/users/students/<int:student_id>/assignedteacher", headers=headers, json=data)
+            response = requests.get(f"{self.API_URL}/users/students/{self.student_id}/assignedteacher", headers=headers, json=data)
             response = response.json()
     
             assigned_teacher_fname = response["fname"]
@@ -109,21 +108,20 @@ class Admin(User):
         
         
 class Teacher(User):
-    teacher = True
+    
+    def __init__(self):
+        teacher = True
+                        
+        self.student_ids = requests.get(f"{self.API_URL}/users/teachers/{self.login_email}", headers={"Content-Type": "application/json"}).json()["student_ids"]
+        
 
 class Student(User):
-    student = True
     
-    #Modify
-    def view_student(self, fname, lname):
-        data = {"fname": self.fname,
-                "lname": self.lname}
-        headers = {"Content-Type": "application/json"}  
-        response = requests.get(f"{self.API_URL}/students/{self.lname}", headers=headers, json=data)
-        response = response.json()
-            
-        return f"First name: {response.get('fname')}"
-        return f"Last name: {response.get('lname')}"
+    def __init__(self):    
+        student = True
+                                
+        self.assigned_teacher_id = requests.get(f"{self.API_URL}/users/students/{self.login_email}", headers={"Content-Type": "application/json"}).json()["assigned_teacher_id"]        
+  
     
     
 
@@ -135,9 +133,9 @@ class Student():
     
     def view_teacher(self):
         
-                print(f"{t['fname']} {t['lname']} is your teacher. You can reach them at {t['login_email']}")
+        return(f"{t['fname']} {t['lname']} is your teacher. You can reach them at {t['login_email']}")
             
-            return
+            
         
 #teacher_test = Teacher()
 #student_1 = Student("student1@school.co.uk", "hsiohji9", 900, "Dane", "Bowers", "11.02,85", 1, 1)

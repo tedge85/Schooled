@@ -9,7 +9,6 @@ def cli():
 
 
     
-
 def view_user_list(user_list):
     headers = {"Content-Type": "application/json"}  # Set the correct content type
     response = requests.get(f"{API_URL}/{user_list}", headers=headers)
@@ -53,7 +52,7 @@ view_user(first_name, last_name)'''
 '''user_list = input("Enter teacher or student: ")
 view_user_list(user_list + "_list")'''
 
-def view_student(student_fname, student_lname):
+'''def view_student(student_fname, student_lname):
         data = {"fname": student_fname,
                 "lname": student_lname}
         headers = {"Content-Type": "application/json"}  
@@ -92,16 +91,39 @@ def admin_menu():
     if user == "teacher":
             new_teacher = Teacher(login_email, password, fname, lname, DOB, lesson_id, teacher_id=teacher_id, student_ids=student_ids)
         else:
-            new_student = Student(login_email, password, fname, lname, DOB, lesson_id, assigned_teacher_id=assigned_teacher_id, student_ids=student_ids)
+            new_student = Student(login_email, password, fname, lname, DOB, lesson_id, assigned_teacher_id=assigned_teacher_id, student_ids=student_ids)'''
 
     
     
     
 
-student_fname = input("Enter first name of student to view: ")
-student_lname = input("Enter last name of student to view: ")
+'''student_fname = input("Enter first name of student to view: ")
+student_lname = input("Enter last name of student to view: ")'''
 
-print(view_student(student_fname, student_lname))
+'''print(view_student(student_fname, student_lname))
 student_id = int(get_student_id(student_fname, student_lname))
 print(student_id)
-print(view_assigned_teacher(student_lname, 908))
+print(view_assigned_teacher(student_lname, 908))'''
+
+def view_assigned_teacher(student_id):
+    data = {"student_id": student_id}
+    headers = {"Content-Type": "application/json"}  
+    response = requests.get(f"{API_URL}/users/students/{student_id}/assignedteacher", headers=headers, json=data)
+    response = response.json()
+    
+    assigned_teacher_fname = response["fname"]
+    assigned_teacher_lname = response["lname"]
+    assigned_teacher_email = response["login_email"]
+    return f"Assigned teacher: {assigned_teacher_fname} {assigned_teacher_lname}\nTeacher's email: {assigned_teacher_email}\n"    
+
+
+login_email = input("Enter your email address: ")
+student_id =  requests.get(f"{API_URL}/users/students/{login_email}", headers={"Content-Type": "application/json"}).json()["student_id"]
+fname = requests.get(f"{API_URL}/users/students/{login_email}", headers={"Content-Type": "application/json"}).json()["fname"]
+lname = requests.get(f"{API_URL}/users/students/{login_email}", headers={"Content-Type": "application/json"}).json()["lname"]
+DOB = requests.get(f"{API_URL}/users/students/{login_email}", headers={"Content-Type": "application/json"}).json()["DOB"]
+subject_studying = requests.get(f"{API_URL}/users/students/{login_email}", headers={"Content-Type": "application/json"}).json()["subject_studying"]
+lesson_id = requests.get(f"{API_URL}/users/students/{login_email}", headers={"Content-Type": "application/json"}).json()["lesson_id"]
+assigned_teacher_id = int(requests.get(f"{API_URL}/users/students/{login_email}", headers={"Content-Type": "application/json"}).json()["assigned_teacher_id"])
+assigned_teacher = view_assigned_teacher(student_id)
+print(f"\nName: {fname} {lname}\nDOB: {DOB}\nStudying: {subject_studying}\nlesson id: {lesson_id}\n{assigned_teacher}")
