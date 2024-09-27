@@ -1,0 +1,50 @@
+[
+    {
+        "login_email": "teacher1@school.co.uk",
+        "hashed_password": "hsiohji9",
+        "teacher_id": 1,
+        "fname": "John",
+        "lname": "Doe",
+        "DOB": "11.02.85",
+        "lesson_id": 1,
+        "student_ids": [
+            900,
+            901,
+            902
+        ]
+    },
+    {
+        "login_email": "teacher2@school.co.uk",
+        "hashed_password": "hsiohji9",
+        "teacher_id": 2,
+        "fname": "Jane",
+        "lname": "Doe",
+        "DOB": "11.02.85",
+        "lesson_id": 2,
+        "student_ids": [
+            904,
+            905,
+            906
+        ]
+    },
+    {
+        "login_email": "teacher1@school.co.uk",
+        "hashed_password": "hsiohji9",
+        "teacher_id": "3",
+        "fname": "Todd",
+        "lname": "Edge",
+        "DOB": "11.02.85",
+        "lesson_id": "1",
+      "student_ids": [ 907 ]
+    },
+    {
+        "login_email": "teacher1@school.co.uk",
+        "hashed_password": "hsiohji9",
+        "teacher_id": "3",
+        "fname": "Charley",
+        "lname": "Edge",
+        "DOB": "22.02.90",
+        "lesson_id": "1",
+      "student_ids": [ 908 ]
+    }
+]
