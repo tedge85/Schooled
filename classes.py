@@ -1,16 +1,21 @@
 import requests
 ####NOTES########
-#admin creates student object, calls register method with todd.fname etc
-#If student logs on, how are their methods called when, for example answering questons? API searches automaticalley for self.fname etc
-#...and displays lesson questions. view_questions method needed; submit_answer meethod needed - edit_answer()?
 
+
+# Avoid API injection by adding hashed code to endpoints?
 #logging on instantiates object - email used as input to get instance variables used within methods.
 ## Update student keys - assigned_teacher_id - automate
 # Change student key to assigned teacher?
 ## Make admin endpoints to match __init__ variables
-##Change subject_studied to subject so teachers and students can share
-# Admin only assign to main subjects - error handling
+##Change subject_studied to subject so teachers and students can share /
+
 # When admin registers a new teacher, student ids are empty but when they assign a new student, if subjects match and student ids are less than 3, they're assigned to first one and teacher student_ids are updated.
+# Extend teacher and student version of view user_profile (Super? Extends?) to include subject teaching/studying assigned students/teacher.
+
+# Login menu
+# Admin/Teacher/Student menus and sub-menus
+# Security options
+
 class User():
     
     API_URL = "http://127.0.0.1:5000"
@@ -24,95 +29,103 @@ class User():
         self.password = password                        
         
         if admin:
-            user_path = "admin"
+            user = "admin"
         elif teacher:
-            user_path = "teachers"
+            user = "teacher"
         else:
-            user_path = "students"
+            user = "student"
         
         ################# Adjust for PEP-8?
-        self.id =  requests.get(f"{self.API_URL}/users/{user_path}/{self.login_email}", headers={"Content-Type": "application/json"}).json()["id"]
-        self.fname = requests.get(f"{self.API_URL}/users/{user_path}/{self.login_email}", headers={"Content-Type": "application/json"}).json()["fname"]
-        self.lname = requests.get(f"{self.API_URL}/users/{user_path}/{self.login_email}", headers={"Content-Type": "application/json"}).json()["lname"]
-        self.DOB = requests.get(f"{self.API_URL}/users/{user_path}/{self.login_email}", headers={"Content-Type": "application/json"}).json()["DOB"]
-        self.subject = requests.get(f"{self.API_URL}/users/{user_path}/{self.login_email}", headers={"Content-Type": "application/json"}).json()["subject"]
-        
+        self.id =  requests.get(f"{self.API_URL}/users/{user}s/{self.login_email}", headers={"Content-Type": "application/json"}).json()["id"]
+        self.fname = requests.get(f"{self.API_URL}/users/{user}s/{self.login_email}", headers={"Content-Type": "application/json"}).json()["fname"]
+        self.lname = requests.get(f"{self.API_URL}/users/{user}s/{self.login_email}", headers={"Content-Type": "application/json"}).json()["lname"]
+        self.DOB = requests.get(f"{self.API_URL}/users/{user}s/{self.login_email}", headers={"Content-Type": "application/json"}).json()["DOB"]                
+
         if not admin:    
-            self.lesson_id = requests.get(f"{self.API_URL}/users/{user_path}/{self.login_email}", headers={"Content-Type": "application/json"}).json()["lesson_id"]
-
-    def view_user_info(self): # Add lesson details
-        # Admins calling this method view all teacher info.
-        if self.admin:
-            headers = {"Content-Type": "application/json"}  
-            response = requests.get(f"{self.API_URL}/'teacher_list'", headers=headers)
-            data = response.json()        
-            teacher_details = [(teacher["teacher_id"], teacher["fname"], teacher["lname"], teacher["email"]) for teacher in data]
-            return(teacher_details)
-        # Teachers calling this method view their own info.
-        elif self.teacher:                                
+            self.lesson_id = requests.get(f"{self.API_URL}/users/{user}s/{self.login_email}", headers={"Content-Type": "application/json"}).json()["lesson_id"]
+            self.subject = requests.get(f"{self.API_URL}/users/{user}s/{self.login_email}", headers={"Content-Type": "application/json"}).json()["subject"]
+                
+    def view_user_profile(self): # Add lesson details
         
-            return f"Name: {self.fname} {self.lname}\nEmail: {self.email}\n"
-        # Students calling this method view their assigned teacher info.    
-        else: 
-            data = {"student_id": self.student_id}
-            headers = {"Content-Type": "application/json"}  
-            response = requests.get(f"{self.API_URL}/users/students/{self.student_id}/assignedteacher", headers=headers, json=data)
-            response = response.json()
+        return f"\t\t****{self.user} profile****\n\nName: {self.fname} {self.lname}\n{self.user} ID: {self.id}\nEmail: {self.email}\nDate of Birth: {self.DOB}"
+                                               
+    def view_lesson_questions(self):
+            pass
     
-            assigned_teacher_fname = response["fname"]
-            assigned_teacher_lname = response["lname"]
-            assigned_teacher_email = response["login_email"]
-            return f"Assigned teacher: {assigned_teacher_fname} {assigned_teacher_lname}\nTeacher's email: {assigned_teacher_email}\n"
+    def view_lesson_answers(self):
+            pass
 
-    def view_student_info(self):
-        # Admins calling this method view all student info.
-        if self.admin:
-            headers = {"Content-Type": "application/json"}  
-            response = requests.get(f"{self.API_URL}/'student_list'", headers=headers)
-            data = response.json()        
-            student_details = [(student["student_id"], student["fname"], student["lname"], student["email"]) for student in data]
-            return(student_details)
-        
-        # Teachers calling this method view their assigned student info.    
-        elif self.teacher:
-            data = {"teacher_id": self.teaceher_id}
-            headers = {"Content-Type": "application/json"}  
-            response = requests.get(f"{self.API_URL}/users/teachers/<int:teacher_id>/assignedstudent", headers=headers, json=data)
-            response = response.json()
-            ################################################### WIll need to iterate through list
-            assigned_student_fname = response["fname"]
-            assigned_student_lname = response["lname"]
-            assigned_student_email = response["login_email"]
-            return f"Assigned student: {assigned_student_fname} {assigned_student_lname}\nTeacher's email: {assigned_student_email}\n"
-        # Students calling this method view their own user info.            
-        else:             
-            data = {"fname": self.fname,
-                    "lname": self.lname}
-            headers = {"Content-Type": "application/json"}  
-            response = requests.get(f"{self.API_URL}/students/{self.lname}", headers=headers, json=data)
-            response = response.json()
-            
-            fname = response["fname"]
-            lname = response["lname"]
-            email = response["login_email"]
-            
-            return f"Name: {fname} {lname}\nEmail: {email}\n"
-            # Add lesson details                
-        
 class Admin(User):    
     
-    admin = True
+    admin = True    
 
-    def register_user(self, user):        
+    def register_teacher(self, ALLFIELDS): #POST
+        #Pass args - see example.
+        # Assigned student_ids blank at first?
+        pass        
+
+    def assign_teacher(self, teacher): #PUT   
+        pass        
+    
+    def view_teachers(self): #GET
         
-        
-        
+        headers = {"Content-Type": "application/json"}  
+        response = requests.get(f"{self.API_URL}/'teacher_list'", headers=headers)
+        data = response.json()        
+        teacher_details = [(teacher["teacher_id"], teacher["fname"], teacher["lname"], teacher["email"]) for teacher in data]
+        return(teacher_details)
+    
+    def delete_teacher(self, teacher_fname, teacher_lname): #DELETE
+        # Will have to delete teacher ids in assigned student key, then will have to prompt to assign new teacher to these.
+        pass
+
+    def enrol_student(self, student): #PUT
+        # assigned teacher_id blank at first?
+        pass
+
+    def assign_student(self, student): #PUT
+        pass
+
+    def search_student(self, student_fname, student_lname): #GET
+        pass
+
+    def delete_student(self, student_fname, student_lname): #DELETE
+        # Will have to delete student ids in assigned teacher key, then will have to prompt if teacher has no more students - more students needed!
+        pass
+
+    def view_students(self): #GET                
+        headers = {"Content-Type": "application/json"}  
+        response = requests.get(f"{self.API_URL}/'student_list'", headers=headers)
+        data = response.json()        
+        student_details = [(student["student_id"], student["fname"], student["lname"], student["email"]) for student in data]
+        return(student_details)
+
 class Teacher(User):
     
     def __init__(self):
         teacher = True
                         
         self.student_ids = requests.get(f"{self.API_URL}/users/teachers/{self.login_email}", headers={"Content-Type": "application/json"}).json()["student_ids"]
+        self.assigned_student_fnames = [requests.get(f"{self.API_URL}/users/teachers/{self.teacher_id}/assignedstudent", headers={"Content-Type": "application/json"}).json()["fname"]]
+        self.assigned_student_fnames = [requests.get(f"{self.API_URL}/users/teachers/{self.teacher_id}/assignedstudent", headers={"Content-Type": "application/json"}).json()["lname"]]
+        #### need to zip both lists together then have method to  display both names#########
+        
+        def view_assigned_students(self): ##### GET
+            pass                
+        
+        def upload_lesson_content(self, lesson_id, title, input, questions): ##### POST
+            pass
+        
+        def view_lesson_content(self, lesson_id): ###GET
+            pass         
+        
+        def edit_lesson_questions(self, title=None, input=None, questions=None): ####### POST
+            pass
+        
+        def assign_grade(self, lesson_id): ###### PUT
+            pass
+        
+
         
 
 class Student(User):
@@ -122,21 +135,27 @@ class Student(User):
                                 
         self.assigned_teacher_id = requests.get(f"{self.API_URL}/users/students/{self.login_email}", headers={"Content-Type": "application/json"}).json()["assigned_teacher_id"]        
   
+        def view_assigned_teacher(self):
+            data = {"fname": self.fname,
+                    "lname": self.lname}
+            headers = {"Content-Type": "application/json"}  
+            response = requests.get(f"{self.API_URL}/students/{self.lname}", headers=headers, json=data) ############### May need to change this URI.
+            response = response.json()
+            
+            fname = response["fname"]
+            lname = response["lname"]
+            email = response["login_email"]
+            
+            return f"Name: {fname} {lname}\nEmail: {email}\n"
     
-    
+        def view_lesson_questions(self, subject, lesson_id): ##### GET
+            pass
+        
+        def add_lesson_answers(self, subject, lesson_id, answers): ####### PUT
+            pass
 
+        def edit_lesson_answers(self, subject, lesson_id, answers): ####### PUT
+            pass
+            
+            
    
-
-class Student():
-              
-    #iterate through teacher list to find teacher then disply
-    
-    def view_teacher(self):
-        
-        return(f"{t['fname']} {t['lname']} is your teacher. You can reach them at {t['login_email']}")
-            
-            
-        
-#teacher_test = Teacher()
-#student_1 = Student("student1@school.co.uk", "hsiohji9", 900, "Dane", "Bowers", "11.02,85", 1, 1)
-

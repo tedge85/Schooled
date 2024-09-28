@@ -212,13 +212,13 @@ class Admin(Resource):
             return student, 201
         
 api.add_resource(Users, "/<string:user_list>")
-api.add_resource(Admin, "/users/register/<string:lname>")
+#api.add_resource(Admin, "/users/register/<string:lname>")
 api.add_resource(Teacher, "/users/teachers/<string:email>")
 api.add_resource(AssignedStudent, "/users/teachers/<int:id>/assignedstudent")
 api.add_resource(Student, "/users/students/<string:email>")
 api.add_resource(AssignedTeacher, "/users/students/<int:id>/assignedteacher")
 
- 
+api.add_resource(Admin, "/users/admins/<string:email>") 
 app.run(debug=True)
 
 

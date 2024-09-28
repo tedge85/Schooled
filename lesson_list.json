@@ -1,0 +1,22 @@
+[
+
+  {
+    "lesson_id": 1,
+    "subject": "English",
+    "title": "Word classes",
+    "questions": {
+      "1": "Find the noun: The dog was lively.",
+      "2": "Find the verb: The dog was lively.",
+      "3": "Find the adverb: The dog was lively.",
+      "4": "What word class is the remaining word?"
+    },
+    "answers": {
+      "1": "",
+      "2": " ",
+      "3": "",
+      "4": ""
+    },
+    "grade": ""
+  }
+
+]

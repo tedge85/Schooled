@@ -116,14 +116,29 @@ def view_assigned_teacher(student_id):
     assigned_teacher_email = response["login_email"]
     return f"Assigned teacher: {assigned_teacher_fname} {assigned_teacher_lname}\nTeacher's email: {assigned_teacher_email}\n"    
 
+###### Check status codes
 
-login_email = input("Enter your email address: ")
-student_id =  requests.get(f"{API_URL}/users/students/{login_email}", headers={"Content-Type": "application/json"}).json()["student_id"]
-fname = requests.get(f"{API_URL}/users/students/{login_email}", headers={"Content-Type": "application/json"}).json()["fname"]
-lname = requests.get(f"{API_URL}/users/students/{login_email}", headers={"Content-Type": "application/json"}).json()["lname"]
-DOB = requests.get(f"{API_URL}/users/students/{login_email}", headers={"Content-Type": "application/json"}).json()["DOB"]
-subject_studying = requests.get(f"{API_URL}/users/students/{login_email}", headers={"Content-Type": "application/json"}).json()["subject_studying"]
-lesson_id = requests.get(f"{API_URL}/users/students/{login_email}", headers={"Content-Type": "application/json"}).json()["lesson_id"]
-assigned_teacher_id = int(requests.get(f"{API_URL}/users/students/{login_email}", headers={"Content-Type": "application/json"}).json()["assigned_teacher_id"])
-assigned_teacher = view_assigned_teacher(student_id)
-print(f"\nName: {fname} {lname}\nDOB: {DOB}\nStudying: {subject_studying}\nlesson id: {lesson_id}\n{assigned_teacher}")
+def login(email, password):
+    password_attempts_remaining = 5
+    data = {"login_email": email}
+    headers = {"Content-Type": "application/json"}      
+    # conditions based on whether email contains the word admin, student or teacher, calling different URIs
+    response = requests.get(f"{API_URL}/users/students/{email}", headers=headers, json=data)
+    if response.status_code == 200:
+        response_data = response.json()
+        returned_email = response_data["login_email"]
+        returned_password = response_data["hashed_password"]
+
+        if password == returned_password:
+            return "You're in!" # Call sub-menu depending on list
+        else:
+            password_attempts_remaining -= 1                            
+            return f"Incorrect password. {password_attempts_remaining} password attempts remaning." #### Security feature
+    return "This email address has not been registered. Contact your administrator."
+            
+
+
+    login_email = input("Enter your email address: ")
+    password = input("Enter you password: ")
+
+    print(login(login_email, password))
