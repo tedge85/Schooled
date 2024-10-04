@@ -7,7 +7,7 @@
         "lname": "Adams",
         "DOB": "11.05,95",
         "subject": "English",
-        "lesson_id": 1,
+        "current_lesson_id": 1,
         "assigned_teacher_id": 1
     },
   {
@@ -18,7 +18,7 @@
     "lname": "Bowers",
     "DOB": "11.06,95",
     "subject": "English",
-    "lesson_id": 1,
+    "current_lesson_id": 1,
     "assigned_teacher_id": 1
     },
     {
@@ -29,7 +29,7 @@
         "lname": "Faith",
         "DOB": "11.08,95",
         "subject": "Maths",
-        "lesson_id": 2,
+        "current_lesson_id": 2,
         "assigned_teacher_id": 2
     },
     {
@@ -40,7 +40,7 @@
         "lname": "Skiba",
         "DOB": "11.09,95",
         "subject": "Maths",
-        "lesson_id": 2,
+        "current_lesson_id": 2,
         "assigned_teacher_id": 2
     },
     {
@@ -51,7 +51,7 @@
         "lname": "Adriano",
         "DOB": "11.07,95",
         "subject": "Science",
-        "lesson_id": 3,
+        "current_lesson_id": 3,
         "assigned_teacher_id": 3
     },
     {
@@ -62,7 +62,7 @@
         "lname": "Bowie",
         "DOB": "11.10,95",
         "subject": "Computer Science",
-        "lesson_id": 4,
+        "current_lesson_id": 4,
         "assigned_teacher_id": 4
     }
 ]

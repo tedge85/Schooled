@@ -7,7 +7,7 @@
         "lname": "Doe",
         "DOB": "11.04.85",
         "subject": "English",
-        "lesson_id": 1,
+        "current_current_lesson_id": 1,
         "student_ids": [
             900,
             901            
@@ -21,7 +21,7 @@
         "lname": "Doe",
         "DOB": "11.03.85",
         "subject": "Maths",
-        "lesson_id": 2,
+        "current_current_lesson_id": 1,
         "student_ids": [
             902,
             903            
@@ -30,23 +30,23 @@
     {
         "login_email": "teacher3@school.co.uk",
         "hashed_password": "hsiohji9",
-        "id": "3",
+        "id": 3,
         "fname": "Graham",
         "lname": "Student",
         "DOB": "11.02.85",
         "subject": "Science",
-        "lesson_id": 3,
+        "current_current_lesson_id": 1,
         "student_ids": [ 904 ]
     },
     {
         "login_email": "teacher4@school.co.uk",
         "hashed_password": "hsiohji9",
-        "id": "4",
+        "id": 4,
         "fname": "Lisa",
         "lname": "Edge",
         "DOB": "22.02.90",
         "subject": "Computer Science",
-        "lesson_id": 4,
+        "current_current_lesson_id": 1,
         "student_ids": [ 905 ]
     }
 ]
