@@ -6,24 +6,26 @@ import requests
 ## Update student keys - assigned_teacher_id - automate
 # Change student key to assigned teacher?
 ## Make admin endpoints to match __init__ variables
-##Change subject_studied to subject so teachers and students can share /
+
 
 # When admin registers a new teacher, student ids are empty but when they assign a new student, if subjects match and student ids are less than 3, they're assigned to first one and teacher student_ids are updated.
 # Extend teacher and student version of view user_profile (Super? Extends?) to include subject teaching/studying assigned students/teacher.
 
-# Make login menu dynamic to accept all 3 user types. /
+
 # Admin/Teacher/Student menus and sub-menus
 # Security options
 
-# Map out lesson class methods. /
+
 # Finish lesson class methods.
-# Iterate through users in admin method and format output info. /
+
 # Change 'current_lesson_id' to 'active_lesson_id'. 
 
 # Use similar method to return_active_lesson_id to get latest teacher and student ids, then increment, ready to automatically assign new id when setting up new user.
 
-# Finish trying to get method to display names of assigned students as fname lname. /
+# *** modify_lesson_content used to cover multiplle methods *** #
 
+###### Change data structure of lessons dict - Qs and As as lists. - then change format_lesson_output() method to account for this change.
+####### CHange lesson IDs
 class User():
     
     API_URL = "http://127.0.0.1:5000"
@@ -51,7 +53,7 @@ class User():
         self.DOB = self.user_info["DOB"]                
 
         if not admin:    
-            self.user_info["current_lesson_id"]
+            self.current_lesson_id = self.user_info["current_lesson_id"]
             self.subject = self.user_info["subject"]
                 
     def view_user_profile(self): # Add lesson details
@@ -63,54 +65,101 @@ class Admin(User):
     
     admin = True    
 
+    def __init__(self):
+        self.teacher_list = requests.get(f"{self.API_URL}/teacher_list", headers={"Content-Type": "application/json"}).json()
+        self.student_list = requests.get(f"{self.API_URL}/student_list", headers={"Content-Type": "application/json"}).json()
+
     def register_teacher(self, ALLFIELDS): #POST
         #Pass args - see example.
         # Assigned student_ids blank at first?
         pass        
 
-    def assign_teacher(self, teacher): #PUT   
+    def assign_teacher(self, teacher): #PATCH to student  
         pass        
-    
-    def view_users(self, user): #GET
         
-        ######## Insert logic to handle 'user' input - must be strictly 'student' or 'teacher'.
-        headers = {"Content-Type": "application/json"}  
-        response = requests.get(f"{self.API_URL}/{user}_list", headers=headers)
-        data = response.json()        
-        user_details = [(user["id"], user["fname"], user["lname"], user["login_email"]) for user in data]
-               
-        info_to_return = []
-        # Iterate through user details and output each field.
-        for detail_line in user_details:            
-              ID, fname, lname, uname = detail_line
-              
-              info = f"\nID: {ID}\nFirst name: {fname}\nLast name: {lname}\nUsername: {uname}\n"
-              info_to_return.append(info)
-        
-        info_str = "\n".join(info_to_return)
-              
-        return info_str
+
+    def user_search_by_name(self, fname, lname, user_list):
+        '''searches for inputted name in given list.'''
     
+        if str(user_list)== "teacher_list":
+            user_type = "teacher"
+        elif str(user_list)== "student_list":
+            user_type = "student"
+    
+        for user in user_list:
+            if user["fname"] == fname and user["lname"] == lname:
+                    return user
+        
+        return f"{fname} {lname} has not yet been registered as a {user_type}."
+    
+    def user_search_by_id(id, user_list):
+        '''Searches for user by id in given list.'''
+        for user in user_list:        
+            if int(user["id"]) == id:
+                return user
+    
+    def view_users_info(self, user):
+        '''Displays teacher or student information.'''
+        # If user is a teacher, find assigned students.
+        if "teacher" in user["login_email"]:
+            user_type = "teacher"    
+            assigned_students_data = []     
+             # Iterate through student_ids list, inputting each student id to retrieve their info.     
+            i = 0
+            while i < len(user["student_ids"]):
+                student = self.user_search_by_id(user["student_ids"][i], self.student_list) 
+                 
+                assigned_students_data.append(student)
+                 
+                i += 1
+
+            student_info = []
+            for student in assigned_students_data:
+                                      
+                  info = f"\nID: {student['id']}\nFirst name: {student['fname']}\nLast name: {student['lname']}\nSubject: {student['subject']}\nEmail: {student['login_email']}\n"
+                  student_info.append(info)
+        
+            student_info_str = "\n".join(student_info)
+        
+            return f"\n*****{user_type} info*****\n\nName: {user['fname']} {user['lname']}\nID: {user['id']}\nEmail: {user['login_email']}\nSubject: {user['subject']}\nActive lesson ID: {user['current_lesson_id']}\n\n***Assigned students***\n{student_info_str}\n"
+
+        # If user is a student, find assigned teacher. 
+        elif "student" in user["login_email"]:
+            user_type = "student"
+            for teacher in self.teacher_list:
+                if user["assigned_teacher_id"] == teacher["id"]:
+                    assigned_teacher = teacher
+                    break
+    
+            return f"\n*****{user_type} info*****\n\nName: {user['fname']} {user['lname']}\nID: {user['id']}\nEmail: {user['login_email']}\nSubject: {user['subject']}\nActive lesson ID: {user['current_lesson_id']}\n\n***Assigned teacher***\nName: {teacher['fname']} {teacher['lname']}\nSubject: {teacher['subject']}\nEmail: {teacher['login_email']}\n"
+
+        else:
+            return "This user has not yet been registered as a teacher or student."
+        
+
 
     def delete_teacher(self, teacher_fname, teacher_lname): #DELETE
         # Will have to delete teacher ids in assigned student key, then will have to prompt to assign new teacher to these.
         pass
 
-    def enrol_student(self, student): #PUT
+    def enrol_student(self, student): #PUT then #PATCH(assign to teacher's student_ids (append))
         # assigned teacher_id blank at first?
         pass
 
-    def assign_student(self, student): #PUT
+    def assign_student(self, student): #PATCH ################## separate method??????
+        # Will have to check which subject chosen and assign to appropriate teacher.
         pass
 
     def search_student(self, student_fname, student_lname): #GET
         pass
+    
+    
 
     def delete_student(self, student_fname, student_lname): #DELETE
         # Will have to delete student ids in assigned teacher key, then will have to prompt if teacher has no more students - more students needed!
         pass
 
-    def view_students(self): #GET                
+    def view_students(self): #GET ###########CHange
         headers = {"Content-Type": "application/json"}  
         response = requests.get(f"{self.API_URL}/'student_list'", headers=headers)
         data = response.json()        
@@ -206,7 +255,6 @@ class Lesson():
         return info_str
     
     
-
     #### Methods called by teachers and students #########
     def view_all_my_lessons(self, subject):                
         
@@ -231,7 +279,32 @@ class Lesson():
         info_str = "\n".join(lesson_info_to_return) 
         return info_str    
         
-
+    def change_lesson_content(self, subject, lesson_id, title=None, question_1=None, question_2=None, 
+                       question_3=None, question_4=None, question_5=None, answer_1=None, answer_2=None, 
+                       answer_3=None, answer_4=None, answer_5=None, grade=None):
+    
+        new_lesson_data = {
+            "lesson_id": lesson_id,
+            "subject": subject,        
+            "title": title,        
+            "question_1": question_1,
+            "question_2": question_2,
+            "question_3": question_3,
+            "question_4": question_4,
+            "question_5": question_5,
+            "answer_1": answer_1,
+            "answer_2": answer_2,
+            "answer_3": answer_3,
+            "answer_4": answer_4,
+            "answer_5": answer_5,            
+            "grade": grade    
+         }
+        headers = {"Content-Type": "application/json"}  
+        response = requests.patch(f"{self.API_URL}/lessons/{subject}", headers=headers, json=new_lesson_data)
+        if response.status_code == 201:
+        
+            return(response.json())
+        
     ##### Methods called only by teachers.
     def add_new_lesson(self, subject, title, lesson_input, question_1=None, question_2=None, question_3=None, question_4=None, question_5=None):
      new_lesson_data = {
@@ -262,30 +335,11 @@ class Lesson():
         return(response.json())
      
      return("Oops! Something went wrong.")
-                      
-    def update_lesson(self, subject, current_lesson_id, title=None, input=None, questions=None): ####### PUT
-        pass
-        
-    def assign_grade(self, subject, current_lesson_id): ###### PATCH
-        pass
+                              
+
     
-    def delete_lesson(self, subject, current_lesson_id): #### DELETE
-        
 
-
-    def assign_new_lesson(self, subject, student_fname, student_lname): # PUT
-        # Logic to find student(s) then change current_lesson_id value to self.new_lesson_id.
-        pass
-
-    ##### Methods called by students.
-    def add_lesson_answers(self, subject, current_lesson_id, answers): ####### PUT
-        pass
-
-    def update_answer(self, subject, current_lesson_id, answers): ####### PUT
-        pass
     
-    def delete_answers(self, subject, current_lesson_id): #### DELETE
-        pass
+   
     
-    def delete_answer(self, subject, current_lesson_id): #### DELETE
-        pass
+    

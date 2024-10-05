@@ -2,33 +2,17 @@
     {
         "lesson_id": 1,
         "subject": "English",
-        "title": "test1",
-        "question_1": "test2",
+        "title": "NEW",
+        "question_1": "CHANGE?",
         "question_2": "Find the verb: The dog was lively.",
         "question_3": "Find the adjective: The dog was lively.",
         "question_4": "What word class is the remaining word?",
         "question_5": "Can you add another adjective?",
-        "answer_1": "None",
-        "answer_2": null,
-        "answer_3": null,
-        "answer_4": null,
-        "answer_5": null,
-        "grade": null
-    },
-    {
-        "lesson_id": 2,
-        "subject": "English",
-        "title": "test1",
-        "question_1": "test2",
-        "question_2": "Find the verb: The dog was lively.",
-        "question_3": "Find the adjective: The dog was lively.",
-        "question_4": "What word class is the remaining word?",
-        "question_5": "Can you add another adjective?",
-        "answer_1": "None",
-        "answer_2": null,
-        "answer_3": null,
-        "answer_4": null,
-        "answer_5": null,
-        "grade": null
+        "answer_1": "ANYTHING",
+        "answer_2": "test2",
+        "answer_3": "test3",
+        "answer_4": "test4",
+        "answer_5": "ANYTHING NOW?",
+        "grade": "A"
     }
 ]

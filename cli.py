@@ -109,8 +109,8 @@ def add_lesson_answers(subject, lesson_id, title=None, question_1=None, question
 
     return("Oops! Something went wrong.")
 
-print(add_lesson_answers("English", 1, title="Eng", question_1="Test", question_2="where", 
-                       question_3="anything", question_4=None, question_5=None, answer_1="test1", 
+print(add_lesson_answers("English", 1, title="Boom", question_1="Test", question_2="where", 
+                       question_3="anything", question_4=None, question_5=None, answer_1="YEEES", 
                        answer_2="test2", answer_3="test3", answer_4="test4", answer_5="test5", grade="A"))
 
 #print(add_lesson_answers("English", 1, 4, 3, 2, 1, 8))

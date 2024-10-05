@@ -1,11 +1,14 @@
 ###TO DO####
 # Add subject_taught key to teacher_list, corresponding to subject_studied key to student_list
-# Make lesson json file. /
-# Make admin json file. /
-# Make dynamic load and save file method /
+
 # Make sure new keys marry up to arguments passed
 # Use tuples - FOR IDS?
 # Check codes correct
+
+# load_list() fixed /
+# Patch method fixed /
+
+# USE SIMILAR METHOD FOR POSTING LESSON CONTENT - RESTRICT TEACHERS FROM PUTTING IN ANSWERS?
 
 ###### Think again about lesson list ids - id for subject
 
@@ -25,7 +28,7 @@ api = Api(app)
 def load_list(list_name):
     '''Loads json files - for users or lessons - into dictionaries.'''
     try:
-        with open(f"{list_name}", "r") as f:
+        with open(f"{list_name}.json", "r") as f:
             return json.load(f)
     # create an empty list if list.json has not yet been created.
     except FileNotFoundError:
@@ -34,13 +37,13 @@ def load_list(list_name):
 def save_list(user_or_lesson, list_name):
     '''Saves user or lesson dictionaries into json files.'''
 
-    with open(f"{user_or_lesson}_list.json", "w") as f:
+    with open(f"{user_or_lesson}.json", "w") as f:
         json.dump(list_name, f, indent=4)
         
-admin_list = load_list("admin_list.json")
-teacher_list = load_list("teacher_list.json")
-student_list = load_list("student_list.json")
-lesson_list = load_list("lesson_list.json")
+admin_list = load_list("admin_list")
+teacher_list = load_list("teacher_list")
+student_list = load_list("student_list")
+lesson_list = load_list("lesson_list")
 
 
 user_lists = {
@@ -193,7 +196,7 @@ class Admin(Resource):
                 "ids": []
             }
             teacher_list.append(teacher)
-            save_list("teacher", teacher_list)
+            save_list("teacher_list", teacher_list)
             return teacher, 201
     
         else:
@@ -209,7 +212,7 @@ class Admin(Resource):
             }
                         
             student_list.append(teacher)
-            save_list("student", student_list)
+            save_list("student_list", student_list)
             return student, 201
         
 class Lessons(Resource):
@@ -245,20 +248,20 @@ class Lesson(Resource):
         lesson_list.append(lesson)
         
 
-        save_list("lesson", lesson_list)
+        save_list("lesson_list", lesson_list)
 
         return lesson, 201
     
     def patch(self, subject):        
         
         parser = reqparse.RequestParser()
-        parser.add_argument("lesson_id")
-        parser.add_argument("title")
-        parser.add_argument("question_1")
-        parser.add_argument("question_2")
-        parser.add_argument("question_3")
-        parser.add_argument("question_4")
-        parser.add_argument("question_5")
+        parser.add_argument("lesson_id", type=int)
+        parser.add_argument("title", type=str)
+        parser.add_argument("question_1", type=str)
+        parser.add_argument("question_2", type=str)
+        parser.add_argument("question_3", type=str)
+        parser.add_argument("question_4", type=str)
+        parser.add_argument("question_5", type=str)
         parser.add_argument("answer_1", type=str)
         parser.add_argument("answer_2", type=str)
         parser.add_argument("answer_3", type=str)
@@ -269,27 +272,76 @@ class Lesson(Resource):
         args = parser.parse_args()
         
         for lesson in lesson_list:
-            if subject == lesson["subject"]: #and args["lesson_id"] == lesson["lesson_id"]:
+            if subject == lesson["subject"] and args["lesson_id"] == lesson["lesson_id"]:
                 
                 lesson["lesson_id"] = lesson["lesson_id"]
                 lesson["subject"] = lesson["subject"]
-                lesson["title"] = args["title"]
-                lesson["question_1"] = args["question_1"]
-                lesson["question_2"] = lesson["question_2"]
-                lesson["question_3"] = lesson["question_3"]
-                lesson["question_4"] = lesson["question_4"]
-                lesson["question_5"] = lesson["question_5"]
-                lesson["answer_1"] = str(args["answer_1"])
-                lesson["answer_2"] = args["answer_2"]
-                lesson["answer_3"] = args["answer_3"]
-                lesson["answer_4"] = args["answer_4"]           
-                lesson["answer_5"] = args["answer_5"]                                
-                lesson["grade"] = args["grade"]
+                
+                # Conditions set to change values if keyword arguments provided.
+                if args["title"]:
+                    lesson["title"] = args["title"]
+                else:
+                    lesson["title"] = lesson["title"]
+                
+                if args["question_1"]:                    
+                    lesson["question_1"] = args["question_1"]
+                else:
+                    lesson["question_1"] = lesson["question_1"]
+                
+                if args["question_2"]:                    
+                    lesson["question_2"] = args["question_2"]
+                else:
+                    lesson["question_2"] = lesson["question_2"]
+                    
+                if args["question_3"]:                    
+                    lesson["question_3"] = args["question_3"]
+                else:
+                    lesson["question_3"] = lesson["question_3"]
+                    
+                if args["question_4"]:                    
+                    lesson["question_4"] = args["question_4"]
+                else:
+                    lesson["question_4"] = lesson["question_4"]
+                    
+                if args["question_5"]:                    
+                    lesson["question_5"] = args["question_5"]
+                else:
+                    lesson["question_5"] = lesson["question_5"]
+
+                if args["answer_1"]:                    
+                    lesson["answer_1"] = args["answer_1"]
+                else:
+                    lesson["answer_1"] = lesson["answer_1"]
+                
+                if args["answer_2"]:                    
+                    lesson["answer_2"] = args["answer_2"]
+                else:
+                    lesson["answer_2"] = lesson["answer_2"]
+                    
+                if args["answer_3"]:                    
+                    lesson["answer_3"] = args["answer_3"]
+                else:
+                    lesson["answer_3"] = lesson["answer_3"]
+                
+                if args["answer_4"]:                    
+                    lesson["answer_4"] = args["answer_4"]
+                else:
+                    lesson["answer_4"] = lesson["answer_4"]
+                    
+                if args["answer_5"]:                    
+                    lesson["answer_5"] = args["answer_5"]
+                else:
+                    lesson["answer_5"] = lesson["answer_5"]
+                                
+                if args["grade"]:                    
+                    lesson["grade"] = args["grade"]
+                else:
+                    lesson["grade"] = lesson["grade"]                                           
 
                 
-            save_list("lesson", lesson_list)
+            save_list("lesson_list", lesson_list)
             return lesson, 201
-        return lesson_list #"lesson not found", 404
+        return "lesson not found", 404
                              
 
         '''if args["title"]:
