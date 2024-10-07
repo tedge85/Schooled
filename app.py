@@ -5,8 +5,7 @@
 # Use tuples - FOR IDS?
 # Check codes correct
 
-# load_list() fixed /
-# Patch method fixed /
+###### TEST POST LESSONS METHOD
 
 # USE SIMILAR METHOD FOR POSTING LESSON CONTENT - RESTRICT TEACHERS FROM PUTTING IN ANSWERS?
 
@@ -48,7 +47,8 @@ lesson_list = load_list("lesson_list")
 
 user_lists = {
     "student_list": student_list,
-    "teacher_list": teacher_list
+    "teacher_list": teacher_list,
+    "admin_list": admin_list
 }
 
 ################ API endpoints. #####################
@@ -214,15 +214,11 @@ class Admin(Resource):
             student_list.append(teacher)
             save_list("student_list", student_list)
             return student, 201
-        
-class Lessons(Resource):
-    def get(self):               
-        return lesson_list
-        return "User not found", 404    
-
+          
 class Lesson(Resource):
-    def get(self):
+    def get(self, subject):
         return lesson_list, 201
+        return "Lessons not found", 404
 
     def post(self, subject):
         
@@ -240,8 +236,8 @@ class Lesson(Resource):
                 "subject": subject,
                 "title": args["title"],
                 "input": args["input"],
-                "questions": args["questions"],
-                "answers": args["answers"],
+                "questions": [args["questions"]],
+                "answers": [args["answers"]],
                 "grade": args["grade"]
                 }
         
@@ -257,16 +253,9 @@ class Lesson(Resource):
         parser = reqparse.RequestParser()
         parser.add_argument("lesson_id", type=int)
         parser.add_argument("title", type=str)
-        parser.add_argument("question_1", type=str)
-        parser.add_argument("question_2", type=str)
-        parser.add_argument("question_3", type=str)
-        parser.add_argument("question_4", type=str)
-        parser.add_argument("question_5", type=str)
-        parser.add_argument("answer_1", type=str)
-        parser.add_argument("answer_2", type=str)
-        parser.add_argument("answer_3", type=str)
-        parser.add_argument("answer_4", type=str)
-        parser.add_argument("answer_5", type=str)
+        parser.add_argument("input", type=str)
+        parser.add_argument("questions", type=list)        
+        parser.add_argument("answers", type=list)
         parser.add_argument("grade", type=str)
         
         args = parser.parse_args()
@@ -274,65 +263,28 @@ class Lesson(Resource):
         for lesson in lesson_list:
             if subject == lesson["subject"] and args["lesson_id"] == lesson["lesson_id"]:
                 
-                lesson["lesson_id"] = lesson["lesson_id"]
+                # Don't change automatically assigned lesson ID and subject.
+                lesson["lesson_id"] = lesson["lesson_id"] 
                 lesson["subject"] = lesson["subject"]
                 
-                # Conditions set to change values if keyword arguments provided.
+                # Conditions set to change values if keyword arguments provided, otherwise keep them the same.
                 if args["title"]:
                     lesson["title"] = args["title"]
                 else:
                     lesson["title"] = lesson["title"]
                 
-                if args["question_1"]:                    
-                    lesson["question_1"] = args["question_1"]
+                if args["questions"]:
+                    for question in args["questions"]:
+                        lesson["questions"].append(question)
                 else:
-                    lesson["question_1"] = lesson["question_1"]
-                
-                if args["question_2"]:                    
-                    lesson["question_2"] = args["question_2"]
-                else:
-                    lesson["question_2"] = lesson["question_2"]
-                    
-                if args["question_3"]:                    
-                    lesson["question_3"] = args["question_3"]
-                else:
-                    lesson["question_3"] = lesson["question_3"]
-                    
-                if args["question_4"]:                    
-                    lesson["question_4"] = args["question_4"]
-                else:
-                    lesson["question_4"] = lesson["question_4"]
-                    
-                if args["question_5"]:                    
-                    lesson["question_5"] = args["question_5"]
-                else:
-                    lesson["question_5"] = lesson["question_5"]
-
-                if args["answer_1"]:                    
-                    lesson["answer_1"] = args["answer_1"]
-                else:
-                    lesson["answer_1"] = lesson["answer_1"]
-                
-                if args["answer_2"]:                    
-                    lesson["answer_2"] = args["answer_2"]
-                else:
-                    lesson["answer_2"] = lesson["answer_2"]
-                    
-                if args["answer_3"]:                    
-                    lesson["answer_3"] = args["answer_3"]
-                else:
-                    lesson["answer_3"] = lesson["answer_3"]
-                
-                if args["answer_4"]:                    
-                    lesson["answer_4"] = args["answer_4"]
-                else:
-                    lesson["answer_4"] = lesson["answer_4"]
-                    
-                if args["answer_5"]:                    
-                    lesson["answer_5"] = args["answer_5"]
-                else:
-                    lesson["answer_5"] = lesson["answer_5"]
+                    lesson["questions"] = lesson["questions"]
                                 
+                if args["answers"]:
+                    for answer in args["answers"]:
+                        lesson["answers"].append(answer)                    
+                else:
+                    lesson["answers"] = lesson["answers"]
+                                                                                
                 if args["grade"]:                    
                     lesson["grade"] = args["grade"]
                 else:
@@ -343,49 +295,14 @@ class Lesson(Resource):
             return lesson, 201
         return "lesson not found", 404
                              
-
-        '''if args["title"]:
-                    lesson["title"] = args["title"]
-                if args["input"]:
-                    lesson["input"] = args["input"]
-                if args["question_1"]:
-                    lesson["questions"]["1"] = args["question_1"]
-                if args["answer_1"]:
-                    lesson["answers"]["1"] = args["answer_1"]
-                if args["answer_2"]:
-                    lesson["answers"]["2"] = args["answer_2"]
-                if args["answer_3"]:
-                    lesson["answers"]["3"] = args["answer_3"]
-                if args["answer_4"]:
-                    lesson["answers"]["4"] = args["answer_4"]
-                if args["answer_5"]:
-                    lesson["answers"]["5"] = args["answer_5"]
-                if args["grade"]:
-                    lesson["grade"] = args["grade"]''' 
-
-class MathsLessons(Resource):
-    pass
-
-class ScienceLessons(Resource):
-    pass
-
-class ComputerScienceLessons(Resource):
-    pass
-
+        
 api.add_resource(Users, "/<string:user_list>")
-#api.add_resource(Admin, "/users/admins/<string:lname>")
+api.add_resource(Admin, "/users/admins/<string:email>") 
 api.add_resource(Teacher, "/users/teachers/<string:email>")
 api.add_resource(AssignedStudent, "/users/teachers/<int:id>/assignedstudent")
 api.add_resource(Student, "/users/students/<string:email>")
 api.add_resource(AssignedTeacher, "/users/students/<int:student_id>/assignedteacher")
-
-api.add_resource(Admin, "/users/admins/<string:email>") 
-
-api.add_resource(Lessons, "/lessons")
-api.add_resource(Lesson, "/lessons/<string:subject>")
-api.add_resource(MathsLessons, "/maths/<int:lesson_id>")
-api.add_resource(ScienceLessons, "/science/<int:lesson_id>")
-api.add_resource(ComputerScienceLessons, "/Computer Science/<int:lesson_id>")
+api.add_resource(Lesson, "/lessons/<subject>")
 app.run(debug=True)
 
 

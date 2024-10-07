@@ -1,6 +1,6 @@
 [
   {
     "login_email": "admin@school.co.uk",
-    "password":  "strongpassword"
+    "hashed_password":  "strongpassword"
   }
 ]

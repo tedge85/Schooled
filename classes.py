@@ -22,10 +22,16 @@ import requests
 
 # Use similar method to return_active_lesson_id to get latest teacher and student ids, then increment, ready to automatically assign new id when setting up new user.
 
-# *** modify_lesson_content used to cover multiplle methods *** #
+# *** modify_lesson_content used to cover multiple methods *** #
 
-###### Change data structure of lessons dict - Qs and As as lists. - then change format_lesson_output() method to account for this change.
+# Change data structure of lessons dict - Qs and As as lists. - then change format_lesson_output() method to account for this change. /
+# Started to build menus /
+# change email addresses to .teacher, .admin, .student
+
 ####### CHange lesson IDs
+
+### MAKE SURE TO INCLUDE TUPLE SOMEWHERE - IDS?
+
 class User():
     
     API_URL = "http://127.0.0.1:5000"
@@ -66,11 +72,14 @@ class Admin(User):
     admin = True    
 
     def __init__(self):
+        super().__init__(self.login_email, self.password)
+        self.admin_list = requests.get(f"{self.API_URL}/admin_list", headers={"Content-Type": "application/json"}).json()        
         self.teacher_list = requests.get(f"{self.API_URL}/teacher_list", headers={"Content-Type": "application/json"}).json()
         self.student_list = requests.get(f"{self.API_URL}/student_list", headers={"Content-Type": "application/json"}).json()
 
     def register_teacher(self, ALLFIELDS): #POST
         #Pass args - see example.
+        ######### Must have .teacher email address
         # Assigned student_ids blank at first?
         pass        
 
@@ -78,7 +87,7 @@ class Admin(User):
         pass        
         
 
-    def user_search_by_name(self, fname, lname, user_list):
+    def name_search_for_user(self, fname, lname, user_list):
         '''searches for inputted name in given list.'''
     
         if str(user_list)== "teacher_list":
@@ -92,7 +101,7 @@ class Admin(User):
         
         return f"{fname} {lname} has not yet been registered as a {user_type}."
     
-    def user_search_by_id(id, user_list):
+    def id_search_for_user(id, user_list):
         '''Searches for user by id in given list.'''
         for user in user_list:        
             if int(user["id"]) == id:
@@ -144,6 +153,7 @@ class Admin(User):
 
     def enrol_student(self, student): #PUT then #PATCH(assign to teacher's student_ids (append))
         # assigned teacher_id blank at first?
+        ######### Must have .teacher email address
         pass
 
     def assign_student(self, student): #PATCH ################## separate method??????
@@ -169,6 +179,8 @@ class Admin(User):
 class Teacher(User):
     
     def __init__(self):
+        super().__init__(self.login_email, self.password)
+        
         teacher = True
                         
         self.assigned_student_names = [requests.get(f"{self.API_URL}/users/teachers/{self.id}/assignedstudent", headers={"Content-Type": "application/json"}).json()]
@@ -189,7 +201,9 @@ class Teacher(User):
 
 class Student(User):
     
-    def __init__(self):    
+    def __init__(self):
+        super().__init__(self.login_email, self.password)
+        
         student = True
                 
         self.assigned_teacher = requests.get(f"{self.API_URL}/users/students/{self.id}/assignedteacher", headers={"Content-Type": "application/json"}).json()
@@ -208,13 +222,18 @@ class Lesson():
     def __init__(self, subject):
         
         self.subject = subject
+        
+        self.subject_list_path = requests.get(f"{self.API_URL}/lessons/English", headers={"Content-Type": "application/json"})
+
+        if self.subject_list_path.status_code != 404:
+            lessons = self.subject_list_path.json()
 
         self.lessons = requests.get(f"{self.API_URL}/users/{subject}/lesson_id", 
                                              headers={"Content-Type": "application/json"}).json()               
         
-        self.current_lesson_id = self.return_active_lesson_id(subject)
+        self.current_lesson_id = int(self.return_active_lesson_id("Computer Science"))
         
-        self.new_lesson_id = int(self.current_lesson_id) + 1 # Increment latest lesson id by 1 to ensure new lesson id is unique and follows on.
+        self.new_lesson_id = int(self.current_lesson_id) + 1
     
     def return_active_lesson_id(self, subject):
         
@@ -223,36 +242,23 @@ class Lesson():
         for lesson in self.lessons:
             if lesson["subject"].lower() == subject.lower():                
                 if int(lesson["lesson_id"]) > latest_lesson_id:
-                    latest_lesson_id = lesson["lesson_id"]                    
+                    latest_lesson_id = lesson["lesson_id"]
+            else:
+                return 0 
         
         return latest_lesson_id
             
-
-    def format_lesson_output(self, empty_list, lesson_list):
-        lesson_ID = lesson_list["lesson_id"]
-        subject = lesson_list["subject"]
-        title = lesson_list["title"]
-        lesson_input = lesson_list["input"]
-        questions = "\n".join(f"{q}) {text}" for q, text in lesson_list["questions"].items())
-        answers = "\n".join(f"{a}) {text}" for a, text in lesson_list["answers"].items()) 
-        grade = lesson_list["grade"]    
-    
-        info = f"\nLesson ID: {lesson_ID}\nSubject: {subject}\nTitle: {title}\nInput: {lesson_input}\nQuestions: \n{questions}\nAnswers: \n{answers}\nGrade: {grade}"
-    
-        lesson_info_to_return = empty_list.append(info)
-        return lesson_info_to_return
-    
     #### Method called by admin only
     def view_all_lessons(self):
             
-        lesson_info_to_return = []
+            lesson_info_to_return = []
     
-        for lesson in self.lessons:
-            self.format_lesson_output(lesson_info_to_return, lesson)
+            for lesson in self.lessons:
+                self.format_lesson_output(lesson_info_to_return, lesson)
         
-        info_str = "\n".join(lesson_info_to_return)
+            info_str = "\n".join(lesson_info_to_return)
 
-        return info_str
+            return info_str
     
     
     #### Methods called by teachers and students #########
@@ -272,69 +278,36 @@ class Lesson():
         
         lesson_info_to_return = []
 
-        for lesson in self.lessons:
-            if lesson["subject"].lower() == subject.lower() and current_lesson_id == lesson["lesson_id"]:
+        for lesson in self.lessons:            
+            if lesson["subject"].lower() == subject.lower() and int(current_lesson_id) == int(lesson["lesson_id"]):
                 self.format_lesson_output(lesson_info_to_return, lesson)
-        
+            
         info_str = "\n".join(lesson_info_to_return) 
-        return info_str    
         
-    def change_lesson_content(self, subject, lesson_id, title=None, question_1=None, question_2=None, 
-                       question_3=None, question_4=None, question_5=None, answer_1=None, answer_2=None, 
-                       answer_3=None, answer_4=None, answer_5=None, grade=None):
-    
-        new_lesson_data = {
-            "lesson_id": lesson_id,
-            "subject": subject,        
-            "title": title,        
-            "question_1": question_1,
-            "question_2": question_2,
-            "question_3": question_3,
-            "question_4": question_4,
-            "question_5": question_5,
-            "answer_1": answer_1,
-            "answer_2": answer_2,
-            "answer_3": answer_3,
-            "answer_4": answer_4,
-            "answer_5": answer_5,            
-            "grade": grade    
-         }
-        headers = {"Content-Type": "application/json"}  
-        response = requests.patch(f"{self.API_URL}/lessons/{subject}", headers=headers, json=new_lesson_data)
-        if response.status_code == 201:
-        
-            return(response.json())
+        return info_str
+   
         
     ##### Methods called only by teachers.
-    def add_new_lesson(self, subject, title, lesson_input, question_1=None, question_2=None, question_3=None, question_4=None, question_5=None):
-     new_lesson_data = {
-        "lesson_id": self.new_lesson_id,
-        "subject": subject,
-        "title": title,
-        "input": lesson_input,
-        "questions": {
-            "1": question_1,
-            "2": question_2,
-            "3": question_3,
-            "4": question_4,
-            "5": question_5
-        },
-        "answers": {
-            "1": "None",
-            "2": "None",
-            "3": "None",
-            "4": "None",
-            "5": "None"
-             },
-        "grade": "None"
+    def add_new_lesson(self, subject, title, lesson_input, questions=[], answers=[], grade=None):
+        '''Adds a new lesson, automatically assigning lesson id.'''
+        new_lesson_data = {
+            "lesson_id": (self.new_lesson_id),
+            "subject": subject,
+            "title": title,
+            "input": lesson_input,
+            "questions": [questions],        
+            "answers": [answers],
+            "grade": "None"
         }
-     headers = {"Content-Type": "application/json"}  
-     response = requests.post(f"{self.API_URL}/lessons/{subject}", headers=headers, json=new_lesson_data)
-     if response.status_code == 201:
-        
-        return(response.json())
+        headers = {"Content-Type": "application/json"}  
+        response = requests.post(f"{self.API_URL}/lessons/{subject}", headers=headers, json=new_lesson_data)
+        if response.status_code == 201:
+            lesson_info_to_return = []
+            self.format_lesson_output(lesson_info_to_return, new_lesson_data)
+            info_str = "\n".join(lesson_info_to_return) 
+            return info_str
      
-     return("Oops! Something went wrong.")
+        return("Oops! Something went wrong.")
                               
 
     

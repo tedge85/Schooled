@@ -2,17 +2,113 @@
     {
         "lesson_id": 1,
         "subject": "English",
-        "title": "NEW",
-        "question_1": "CHANGE?",
-        "question_2": "Find the verb: The dog was lively.",
-        "question_3": "Find the adjective: The dog was lively.",
-        "question_4": "What word class is the remaining word?",
-        "question_5": "Can you add another adjective?",
-        "answer_1": "ANYTHING",
-        "answer_2": "test2",
-        "answer_3": "test3",
-        "answer_4": "test4",
-        "answer_5": "ANYTHING NOW?",
-        "grade": "A"
+        "input": "nowt",
+        "title": "BLAMMO",
+        "questions": [
+            "CHANGE?",
+            "Find the verb: The dog was lively.",
+            "Find the adjective: The dog was lively.",
+            "What word class is the remaining word?",
+            "Can you add another adjective?"
+        ],
+        "answers": [
+            "Five",
+            "yes",
+            "dunno",
+            "huh?",
+            "Panama?"
+        ],
+        "grade": ""
+    },
+    {
+        "lesson_id": "2",
+        "subject": "English",
+        "title": "logical operators",
+        "input": "Some input",
+        "questions": [
+            "['What is the outcome: 1 AND 1?', 'What is the outcome: 0 AND 0?', 'What is the outcome: 1 OR 1?', 'What is the outcome:1 XOR 1?', 'What is the outcome: 1 XOR 0?']"
+        ],
+        "answers": [
+            "[]"
+        ],
+        "grade": "None"
+    },
+    {
+        "lesson_id": "3",
+        "subject": "English",
+        "title": "logical operators",
+        "input": "Some input",
+        "questions": [
+            "['What is the outcome: 1 AND 1?', 'What is the outcome: 0 AND 0?', 'What is the outcome: 1 OR 1?', 'What is the outcome:1 XOR 1?', 'What is the outcome: 1 XOR 0?']"
+        ],
+        "answers": [
+            "[]"
+        ],
+        "grade": "None"
+    },
+    {
+        "lesson_id": "4",
+        "subject": "English",
+        "title": "logical operators",
+        "input": "Some input",
+        "questions": [
+            "['What is the outcome: 1 AND 1?', 'What is the outcome: 0 AND 0?', 'What is the outcome: 1 OR 1?', 'What is the outcome:1 XOR 1?', 'What is the outcome: 1 XOR 0?']"
+        ],
+        "answers": [
+            "[]"
+        ],
+        "grade": "None"
+    },
+    {
+        "lesson_id": "5",
+        "subject": "English",
+        "title": "logical operators",
+        "input": "Some input",
+        "questions": [
+            "['What is the outcome: 1 AND 1?', 'What is the outcome: 0 AND 0?', 'What is the outcome: 1 OR 1?', 'What is the outcome:1 XOR 1?', 'What is the outcome: 1 XOR 0)?']"
+        ],
+        "answers": [
+            "[]"
+        ],
+        "grade": "None"
+    },
+    {
+        "lesson_id": "1",
+        "subject": "Computer Science",
+        "title": "logical operators",
+        "input": "Some input",
+        "questions": [
+            "['What is the outcome: 1 AND 1?', 'What is the outcome: 0 AND 0?', 'What is the outcome: 1 OR 1?', 'What is the outcome:1 XOR 1?', 'What is the outcome: 1 XOR 0)?']"
+        ],
+        "answers": [
+            "[]"
+        ],
+        "grade": "None"
+    },
+    {
+        "lesson_id": "2",
+        "subject": "Computer Science",
+        "title": "logical operators",
+        "input": "Some input",
+        "questions": [
+            "['What is the outcome: 1 AND 1?', 'What is the outcome: 0 AND 0?', 'What is the outcome: 1 OR 1?', 'What is the outcome:1 XOR 1?', 'What is the outcome: 1 XOR 0)?']"
+        ],
+        "answers": [
+            "[]"
+        ],
+        "grade": "None"
+    },
+    {
+        "lesson_id": "3",
+        "subject": "Computer Science",
+        "title": "logical operators",
+        "input": "Some input",
+        "questions": [
+            "['What is the outcome: 1 AND 1?', 'What is the outcome: 0 AND 0?', 'What is the outcome: 1 OR 1?', 'What is the outcome:1 XOR 1?', 'What is the outcome: 1 XOR 0)?']"
+        ],
+        "answers": [
+            "[]"
+        ],
+        "grade": "None"
     }
 ]
