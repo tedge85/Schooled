@@ -13,6 +13,7 @@ API_URL = "http://127.0.0.1:5000"
        
 
 def change_lesson_content(subject, lesson_id, title=None, lesson_input=None, questions=[], answers=[], grade=None):
+        
         '''Modifies lesson data.'''
         new_lesson_data = {
             "lesson_id": lesson_id,
@@ -70,7 +71,8 @@ def format_lesson_output(empty_list, lesson_list):
         info = f"\nLesson ID: {lesson_ID}\nSubject: {subject}\nTitle: {title}\nInput: {lesson_input}\nQuestions: \n{question_str}\nAnswers: \n{answer_str}\nGrade: {grade}"
     
         lesson_info_to_return = empty_list.append(info)
-        return lesson_info_to_return
+        
+        return print(lesson_info_to_return)
     
    ''' #### Method called by admin only
 def view_all_lessons():

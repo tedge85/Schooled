@@ -10,7 +10,7 @@
         "current_lesson_id": 1,
         "student_ids": [
             900,
-            901            
+            901
         ]
     },
     {
@@ -23,8 +23,7 @@
         "subject": "Maths",
         "current_lesson_id": 1,
         "student_ids": [
-            902,
-            903            
+            902
         ]
     },
     {
@@ -32,11 +31,11 @@
         "hashed_password": "hsiohji9",
         "id": 3,
         "fname": "Graham",
-        "lname": "Student",
+        "lname": "Teacher",
         "DOB": "11.02.85",
         "subject": "Science",
         "current_lesson_id": 1,
-        "student_ids": [ 904 ]
+        "student_ids": []
     },
     {
         "login_email": "teacher4@school.co.uk",
@@ -47,6 +46,6 @@
         "DOB": "22.02.90",
         "subject": "Computer Science",
         "current_lesson_id": 1,
-        "student_ids": [ 905 ]
+        "student_ids": []
     }
 ]

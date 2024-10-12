@@ -18,97 +18,132 @@
             "huh?",
             "Panama?"
         ],
-        "grade": ""
+        "grade": "C"
     },
     {
-        "lesson_id": "2",
+        "lesson_id": 2,
         "subject": "English",
-        "title": "logical operators",
-        "input": "Some input",
+        "input": "Look at .........",
+        "title": "Adjectives",
         "questions": [
-            "['What is the outcome: 1 AND 1?', 'What is the outcome: 0 AND 0?', 'What is the outcome: 1 OR 1?', 'What is the outcome:1 XOR 1?', 'What is the outcome: 1 XOR 0?']"
+            "Lorem ipsum dolor?",
+            "sit amet, consectetur.",
+            "adipiscing elit",
+            "sed do eiusmod",
+            "tempor incididunt ut labore ?"
         ],
         "answers": [
-            "[]"
+            "Five",
+            "yes",
+            "dunno",
+            "huh?",
+            "Panama?"
         ],
-        "grade": "None"
+        "grade": "B"
     },
     {
-        "lesson_id": "3",
-        "subject": "English",
-        "title": "logical operators",
-        "input": "Some input",
-        "questions": [
-            "['What is the outcome: 1 AND 1?', 'What is the outcome: 0 AND 0?', 'What is the outcome: 1 OR 1?', 'What is the outcome:1 XOR 1?', 'What is the outcome: 1 XOR 0?']"
-        ],
-        "answers": [
-            "[]"
-        ],
-        "grade": "None"
-    },
-    {
-        "lesson_id": "4",
-        "subject": "English",
-        "title": "logical operators",
-        "input": "Some input",
-        "questions": [
-            "['What is the outcome: 1 AND 1?', 'What is the outcome: 0 AND 0?', 'What is the outcome: 1 OR 1?', 'What is the outcome:1 XOR 1?', 'What is the outcome: 1 XOR 0?']"
-        ],
-        "answers": [
-            "[]"
-        ],
-        "grade": "None"
-    },
-    {
-        "lesson_id": "5",
-        "subject": "English",
-        "title": "logical operators",
-        "input": "Some input",
-        "questions": [
-            "['What is the outcome: 1 AND 1?', 'What is the outcome: 0 AND 0?', 'What is the outcome: 1 OR 1?', 'What is the outcome:1 XOR 1?', 'What is the outcome: 1 XOR 0)?']"
-        ],
-        "answers": [
-            "[]"
-        ],
-        "grade": "None"
-    },
-    {
-        "lesson_id": "1",
+        "lesson_id": 1,
         "subject": "Computer Science",
-        "title": "logical operators",
-        "input": "Some input",
+        "input": "dummy",
+        "title": "data",
         "questions": [
-            "['What is the outcome: 1 AND 1?', 'What is the outcome: 0 AND 0?', 'What is the outcome: 1 OR 1?', 'What is the outcome:1 XOR 1?', 'What is the outcome: 1 XOR 0)?']"
+            "A question?",
+            "Another question.",
+            "Yet another question.",
+            "Fourth question",
+            "Fifth question"
         ],
         "answers": [
-            "[]"
+            "Five",
+            "yes",
+            "dunno",
+            "huh?",
+            "Panama?"
         ],
-        "grade": "None"
+        "grade": "F"
     },
     {
-        "lesson_id": "2",
+        "lesson_id": 2,
         "subject": "Computer Science",
-        "title": "logical operators",
-        "input": "Some input",
+        "input": "More dummy",
+        "title": "More data",
         "questions": [
-            "['What is the outcome: 1 AND 1?', 'What is the outcome: 0 AND 0?', 'What is the outcome: 1 OR 1?', 'What is the outcome:1 XOR 1?', 'What is the outcome: 1 XOR 0)?']"
+            "A question?",
+            "Another question.",
+            "Yet another question.",
+            "Fourth question",
+            "Fifth question"
         ],
         "answers": [
-            "[]"
+            "Five",
+            "yes",
+            "dunno",
+            "huh?",
+            "Panama?"
         ],
-        "grade": "None"
+        "grade": "A"
     },
     {
-        "lesson_id": "3",
-        "subject": "Computer Science",
-        "title": "logical operators",
-        "input": "Some input",
+        "lesson_id": 1,
+        "subject": "Science",
+        "input": "Lorem",
+        "title": "ipsum",
         "questions": [
-            "['What is the outcome: 1 AND 1?', 'What is the outcome: 0 AND 0?', 'What is the outcome: 1 OR 1?', 'What is the outcome:1 XOR 1?', 'What is the outcome: 1 XOR 0)?']"
+            " consectetur adipiscing elit",
+            "sed do",
+            "eiusmod tempor incididunt.",
+            "ut labore et dolore ",
+            "magna aliqua. Ut enim"
         ],
         "answers": [
-            "[]"
+            "Five",
+            "yes",
+            "dunno",
+            "huh?",
+            "Panama?"
         ],
-        "grade": "None"
+        "grade": "D"
+    },
+    {
+        "lesson_id": 2,
+        "subject": "Science",
+        "input": "ad minim",
+        "title": "veniam, quis",
+        "questions": [
+            "nostrud exercitation",
+            "ullamco",
+            "eiusmod tempor incididunt.",
+            "ut labore et dolore ",
+            "magna aliqua. Ut enim"
+        ],
+        "answers": [
+            "Five",
+            "yes",
+            "dunno",
+            "huh?",
+            "Panama?"
+        ],
+        "grade": "C"
+    },
+    {
+        "lesson_id": 3,
+        "subject": "English",
+        "title": "neeeeeeeeeeeeeeeeeeeeew",
+        "input": "asass",
+        "questions": [
+            "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+            "dddddddddddddd",
+            "dddddddddddd",
+            "dddddddddddddddddd",
+            "dddddddddddddddddddd"
+        ],
+        "answers": [
+            "null",
+            "a",
+            "a",
+            "a",
+            "a"
+        ],
+        "grade": null
     }
 ]

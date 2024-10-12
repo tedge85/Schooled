@@ -1,0 +1,67 @@
+
+
+santiser added to Security(see how  to use regex to check for scripts)/
+
+Add lesson methods / and try teacher / and student menu
+
+	problems with teacher methods: 	
+
+					'All lessons' needs line to separate each /
+					'question' for add questions needs correct numbers /
+					
+					
+					'Active lessons' returns nowt /
+					
+					
+					**lesson_id for new lesson is not new id - new_lesson_id call and incrementation not working /
+
+					* update lesson content doesn't update - look at data sent - all data? ?? /
+
+
+assign grade not working /
+
+Endpoint for delete / 
+Endpoint for admin post /
+
+Admin class method for delete /
+
+Configure student menus /
+
+finish delete student (also need method to alter teacher info)/ 
+
+NEXT STEPS
+
+enrol student method / and test for finding new student number! /
+
+assign new student to teacher method /
+
+Test assign student method /
+
+
+Amend admin methods / on menus and manually test all methods 1 left to sort - add new student
+
+MAKE GET REQUEST BEFORE SHOWING ALL STUDENTS? - DOES'NT UPDATE CURRENTLY
+
+SCREENSHOT ANY RELEVANT LINTERS INFO some/many
+
+sanitise data method for all inputs - ANY CHANGE TO MAKE AS PER ANUPAM SUGGESTIONS???
+
+Security class featuring rate limiter added within all classes - prevent DDOS
+
+Look at other security requirements - encrypt 
+
+					- hash passwords
+
+					- mfa
+
+Make sure all commented
+
+Make sure un-needed uni api endpoints removed
+
+Make sure PEP-8 compliant, mainly editing long lines - ask AI how!
+
+
+Make report! - ensure references from code. Ref PEP-8 after mentioning?
+
+
+if time, solve: student_3 and 4 not showing current lesson and not able to answer questions

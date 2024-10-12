@@ -1,122 +1,313 @@
 import requests
+import re
+from ratelimit import limits, sleep_and_retry
+
+
 ####NOTES########
-
-# Avoid API injection by adding hashed code to endpoints?
-#logging on instantiates object - email used as input to get instance variables used within methods.
-## Update student keys - assigned_teacher_id - automate
-# Change student key to assigned teacher?
-## Make admin endpoints to match __init__ variables
+# Finish admin menu
 
 
-# When admin registers a new teacher, student ids are empty but when they assign a new student, if subjects match and student ids are less than 3, they're assigned to first one and teacher student_ids are updated.
-# Extend teacher and student version of view user_profile (Super? Extends?) to include subject teaching/studying assigned students/teacher.
+##### Make multiple lines for long lines, using ''' instead of ''
 
 
-# Admin/Teacher/Student menus and sub-menus
-# Security options
-
-
-# Finish lesson class methods.
-
-# Change 'current_lesson_id' to 'active_lesson_id'. 
-
-# Use similar method to return_active_lesson_id to get latest teacher and student ids, then increment, ready to automatically assign new id when setting up new user.
-
-# *** modify_lesson_content used to cover multiple methods *** #
-
-# Change data structure of lessons dict - Qs and As as lists. - then change format_lesson_output() method to account for this change. /
-# Started to build menus /
-# change email addresses to .teacher, .admin, .student
-
-####### CHange lesson IDs
-
-### MAKE SURE TO INCLUDE TUPLE SOMEWHERE - IDS?
 
 class User():
     
     API_URL = "http://127.0.0.1:5000"
-    
-    def __init__(self, login_email, password):
-        admin = False
-        teacher = False
-        student = False                
-        
+       
+    def __init__(self, login_email, password, security=False, admin=False, teacher=False, student=False):
+                                
         self.login_email = login_email 
-        self.password = password                        
-        
-        if admin:
-            user = "admin"
-        elif teacher:
-            user = "teacher"
+        self.password = password                                        
+        self.admin = admin
+        self.teacher = teacher
+        self.student = student
+        self.security = security
+                
+        if security:
+            API_URL = "https://127.0.0.1:5000"
+
+        if self.admin:
+            self.user = "admin"
+        elif self.teacher:
+            self.user = "teacher"
         else:
-            user = "student"
+            self.user = "student"
         
-        ################# Adjust for PEP-8?
-        self.user_info = requests.get(f"{self.API_URL}/users/{user}s/{self.login_email}", headers={"Content-Type": "application/json"}).json()     
-        self.id =  self.user_info["id"]
+        self.user_info = requests.get(f"{self.API_URL}/users/{self.user}s/{self.login_email}", headers={"Content-Type": "application/json"}).json() 
+        
         self.fname = self.user_info["fname"]
         self.lname = self.user_info["lname"]
-        self.DOB = self.user_info["DOB"]                
+        self.email = self.user_info["login_email"]
 
-        if not admin:    
+        if not self.admin:
+            self.id =  self.user_info["id"]
+            self.DOB = self.user_info["DOB"]                
             self.current_lesson_id = self.user_info["current_lesson_id"]
             self.subject = self.user_info["subject"]
-                
-    def view_user_profile(self): # Add lesson details
         
-        return f"\t\t****{self.user} profile****\n\nName: {self.fname} {self.lname}\n{self.user} ID: {self.id}\nEmail: {self.email}\nDate of Birth: {self.DOB}"
+            
+    def view_user_profile(self):
+        
+        if self.admin:
+            print(f'''\n****{self.user.capitalize()} PROFILE****\nName: {self.fname} {self.lname}\nEmail: {self.email}\n''')
+        else:
+            print(f'''\n****{self.user.capitalize()} PROFILE****\nName: {self.fname} {self.lname}\n{self.user} ID: {self.id}\nEmail: {self.email}\nDate of Birth: {self.DOB}\n''')
                                                    
 
-class Admin(User):    
-    
-    admin = True    
+class Admin(User):            
 
-    def __init__(self):
-        super().__init__(self.login_email, self.password)
+    def __init__(self, login_email, password, security=False, admin=True):
+        super().__init__(login_email, password, security=False, admin=True)
+        
         self.admin_list = requests.get(f"{self.API_URL}/admin_list", headers={"Content-Type": "application/json"}).json()        
         self.teacher_list = requests.get(f"{self.API_URL}/teacher_list", headers={"Content-Type": "application/json"}).json()
         self.student_list = requests.get(f"{self.API_URL}/student_list", headers={"Content-Type": "application/json"}).json()
 
-    def register_teacher(self, ALLFIELDS): #POST
-        #Pass args - see example.
-        ######### Must have .teacher email address
-        # Assigned student_ids blank at first?
-        pass        
+        self.security = security
+        self.admin = admin
 
-    def assign_teacher(self, teacher): #PATCH to student  
-        pass        
+        if self.security:
+            self.secure_user = Security(1)
+
+
+    def enrol_student(self):
+        '''Registers a student user and adds them to student_list.json'''                    
+        
+        print("\n***Enrol student***")                
+        
+        new_student_email_num = self.return_new_student_email_number()
+        
+        login_email = f"student{new_student_email_num}@school.co.uk"
+        hashed_password = input("\nEnter a password for this user: ")
+        student_id = self.return_new_student_id()
+        fname = input("\nEnter new student's first name: ")
+        lname = input("\nEnter new student's last name: ")
+        dob = input("\nEnter new student's date of birth(DD.MM.YY): ")
+        while True:
+            try:
+                subject = (input('''\n**What subject will they be studying?**
+                                 \nType 'E' for 'English': 
+                                 \nType 'M' for 'Maths': 
+                                 \nType 'S' for 'Science': 
+                                 \nType 'C' for 'Computer Science': ''')).lower()
+                
+                if subject == "e":
+                    subject = "English"
+                    break
+                
+                elif subject == "m":
+                    subject = "Maths"
+                    break
+
+                elif subject == "s":
+                    subject = "Science"
+                    break
+                
+                elif subject == "c":
+                    subject = "Computer Science"
+                    break
+                
+            except KeyError:
+                "\n!!Type a valid option!!\n"
+                                   
+        assigned_teacher_id = self.return_subject_teacher_id(subject) # Retrieve ID of teacher who teaches chosen subject        
+        new_student_data = {
+            "login_email": login_email,
+            "hashed_password": hashed_password,
+            "id": student_id,
+            "fname": fname,
+            "lname": lname,
+            "DOB": dob,
+            "subject": subject,
+            "current_lesson_id": 1,
+            "assigned_teacher_id": assigned_teacher_id
+            }
+
+        headers = {"Content-Type": "application/json"}  
+        response = requests.post(f"{self.API_URL}/users/admins/{login_email}", headers=headers, json=new_student_data)
+        
+        if response.status_code == 201:
+            
+            # Update assigned teacher record to include new student's id in 'assigned_students' value.
+            self.assign_new_student_to_teacher(login_email, student_id, assigned_teacher_id)        
+
+            # Re-load teacher and student list instance variables so that they are up-to-date.
+            self.student_list = requests.get(f"{self.API_URL}/student_list", headers={"Content-Type": "application/json"}).json()
+
+            self.teacher_list = requests.get(f"{self.API_URL}/teacher_list", headers={"Content-Type": "application/json"}).json()            
+            
+            print("\n*********Student enrolled!***********\n")
+            
+            # Pass the json response (i.e. the new student dictionary) to 
+            # view_user_info in order to display new user.            
+            return self.view_users_info(response.json()) 
+        
+        return print("Oops! Something went wrong.")
+                
+
+    def assign_new_student_to_teacher(self, email, student_id, assigned_teacher_id):
+        '''Updates assigned teacher record to include new student's id in 'assigned_students' value'''
+        
+        new_student_data = {
+            "student_id": student_id,
+            "assigned_teacher_id": assigned_teacher_id
+            }
+
+        # Call patch request to update teacher record.
+        headers = {"Content-Type": "application/json"}
+        
+        response = requests.patch(f"{self.API_URL}/users/teachers/{email}", headers=headers, json=new_student_data)
+        
+        if response.status_code == 200:
+            return True
+        
+        else:
+            return False
         
 
-    def name_search_for_user(self, fname, lname, user_list):
+    def return_subject_teacher_id(self, subject):
+        '''Retrieves teacher who teaches a given subject'''
+        
+        for teacher in self.teacher_list:
+            if teacher["subject"] == subject:
+                return teacher["id"]
+            
+
+    def return_new_student_email_number(self):
+        '''Iterates through student list and returns the highest number 
+        attached to an email and increments by 1.'''
+        
+        highest_email_num = 1
+        for student in self.student_list:
+            email_num = ''.join(filter(str.isdigit, student["login_email"]))
+            if int(email_num) > highest_email_num:
+                highest_email_num = int(email_num)
+            
+        return highest_email_num + 1
+    
+
+    def return_new_student_id(self):
+        '''Iterates through student list and returns the highest number 
+        attached to an email and increments by 1.'''
+        
+        highest_id_num = 1
+        for student in self.student_list:            
+            if int(student["id"]) > highest_id_num:
+                highest_id_num = int(student["id"])
+            
+        return highest_id_num + 1        
+
+
+    def delete_student(self):
+        '''Removes given student from student_list.json'''
+        
+        print("***UNENROL STUDENT***")
+        fname = input(f"\nEnter first name of student to unenrol: ").lower()
+        lname = input(f"\nEnter last name of student to unenrol: ").lower()            
+        
+        for student in self.student_list:
+            
+            if student["fname"].lower() == fname.lower() and student["lname"].lower() == lname.lower():
+                email = student["login_email"]
+                id_to_delete = student["id"]
+                
+                self.view_users_info(student) # Display student info to user.
+                
+                while True:
+                    try:
+                        decision = input("\n!!Are you sure you want to delete this student?!!\n\nSelect 'y' or 'n': ").lower()
+                        if decision == "y":
+                            make_request = requests.delete(f"{self.API_URL}/users/admins/{email}", headers={"Content-Type": "application/json"})
+                            make_request
+            
+                            self.remove_student_id_from_teacher_data(id_to_delete)                            
+                            break
+                        
+                        elif decision == "n":
+                            return
+    
+                    except KeyError:
+                        "!!Choose 'y' or 'n'!!"  
+
+                make_request_to_alter_list = requests.delete(f"{self.API_URL}/users/admins/{email}", headers={"Content-Type": "application/json"})
+                make_request_to_alter_list 
+                
+                self.remove_student_id_from_teacher_data(id_to_delete) # Ensure assigned teacher's record removes deleted student ID from their record.
+
+                # Re-load teacher and student list instance variables so that they are up-to-date.
+                self.student_list = requests.get(f"{self.API_URL}/student_list", headers={"Content-Type": "application/json"}).json()
+                
+                self.teacher_list = requests.get(f"{self.API_URL}/teacher_list", headers={"Content-Type": "application/json"}).json()                                
+                                
+                return 
+                                                    
+        return print(f"{fname} {lname} has not yet been enrolled as a student.")
+                               
+
+    def remove_student_id_from_teacher_data(self, id_to_delete): 
+        '''Makes a PATCH request to API to remove deleted student's id from 
+        teacher['student_ids']'''                
+
+        headers = {"Content-Type": "application/json"}
+        make_request = requests.patch(f"{self.API_URL}/users/students/assignedteacher/{id_to_delete}", headers=headers)
+        make_request
+                
+        return print("\n***student deleted***\n")
+
+    def search_for_user_by_name(self):
         '''searches for inputted name in given list.'''
-    
-        if str(user_list)== "teacher_list":
-            user_type = "teacher"
-        elif str(user_list)== "student_list":
-            user_type = "student"
-    
-        for user in user_list:
-            if user["fname"] == fname and user["lname"] == lname:
-                    return user
+        while True:
         
-        return f"{fname} {lname} has not yet been registered as a {user_type}."
+            try:
+                print("\n***Search for Teacher or Student***\n")
+                
+                user_list = input("Type 't' to search for teacher or 's' to search for a student: ").lower()
+                
+                if user_list == "t":
+                    user_list = self.teacher_list
+                    user_type = "teacher"
+                    break
+                elif user_list == "s":
+                    user_list = self.student_list
+                    user_type = "student"
+                    break                   
+            except ValueError:
+                "Choose a valid option."
+                
+        if self.security:
+            fname = self.secure_user.sanitise_input(input(f"\nEnter {user_type}'s first name: ")).lower()
+            
+            lname = self.secure_user.sanitise_input(input(f"\nEnter {user_type}'s last name: ")).lower()
+            
+        else:
+            fname = input(f"\nEnter {user_type}'s first name: ").lower()
+            lname = input(f"\nEnter {user_type}'s last name: ").lower()            
+        for user in user_list:
+            if user["fname"].lower() == fname and user["lname"].lower() == lname:
+                return self.view_users_info(user)        
+
+        return print(f"{fname} {lname} has not yet been registered as a {user_type}.")
     
-    def id_search_for_user(id, user_list):
-        '''Searches for user by id in given list.'''
+
+    def search_for_user_by_id(self, id, user_list):
+        '''Discrete method - searches for user by id in given list.'''
         for user in user_list:        
             if int(user["id"]) == id:
                 return user
     
+
     def view_users_info(self, user):
         '''Displays teacher or student information.'''
         # If user is a teacher, find assigned students.
         if "teacher" in user["login_email"]:
-            user_type = "teacher"    
-            assigned_students_data = []     
-             # Iterate through student_ids list, inputting each student id to retrieve their info.     
+            user_type = "Teacher"
+            assigned_students_data = []  
+            
+            # Iterate through student_ids list, inputting each student id to retrieve their info.     
             i = 0
             while i < len(user["student_ids"]):
-                student = self.user_search_by_id(user["student_ids"][i], self.student_list) 
+                student = self.search_for_user_by_id(user["student_ids"][i], self.student_list) 
                  
                 assigned_students_data.append(student)
                  
@@ -130,63 +321,53 @@ class Admin(User):
         
             student_info_str = "\n".join(student_info)
         
-            return f"\n*****{user_type} info*****\n\nName: {user['fname']} {user['lname']}\nID: {user['id']}\nEmail: {user['login_email']}\nSubject: {user['subject']}\nActive lesson ID: {user['current_lesson_id']}\n\n***Assigned students***\n{student_info_str}\n"
+            return print(f"\n*****{user_type} info*****\n\nName: {user['fname']} {user['lname']}\nID: {user['id']}\nEmail: {user['login_email']}\nSubject: {user['subject']}\nActive lesson ID: {user['current_lesson_id']}\n\n***Assigned students***\n{student_info_str}\n")
 
         # If user is a student, find assigned teacher. 
         elif "student" in user["login_email"]:
-            user_type = "student"
+            user_type = "Student"
             for teacher in self.teacher_list:
                 if user["assigned_teacher_id"] == teacher["id"]:
                     assigned_teacher = teacher
                     break
     
-            return f"\n*****{user_type} info*****\n\nName: {user['fname']} {user['lname']}\nID: {user['id']}\nEmail: {user['login_email']}\nSubject: {user['subject']}\nActive lesson ID: {user['current_lesson_id']}\n\n***Assigned teacher***\nName: {teacher['fname']} {teacher['lname']}\nSubject: {teacher['subject']}\nEmail: {teacher['login_email']}\n"
+            return print(f"\n*****{user_type} info*****\n\nName: {user['fname']} {user['lname']}\nID: {user['id']}\nEmail: {user['login_email']}\nSubject: {user['subject']}\nActive lesson ID: {user['current_lesson_id']}\n\n***Assigned teacher***\nName: {teacher['fname']} {teacher['lname']}\nSubject: {teacher['subject']}\nEmail: {teacher['login_email']}\n")
 
         else:
-            return "This user has not yet been registered as a teacher or student."
+            return "This user has not yet been registered as a teacher or student."                          
+
+
+    def view_students(self):
+        '''Displays all students and corresponding info.'''
+
+        # Re-load teacher and student list instance variables so that they are up-to-date.
+        self.student_list = requests.get(f"{self.API_URL}/student_list", headers={"Content-Type": "application/json"}).json()
+        self.teacher_list = requests.get(f"{self.API_URL}/teacher_list", headers={"Content-Type": "application/json"}).json()            
+
+        students_str = ""
+
+        for student in self.student_list:
+            students_str += f"\nName: {student['fname']} {student['lname']}\nID: {student['id']}\nEmail: {student['login_email']}\nSubject: {student['subject']}\nActive lesson ID: {student['current_lesson_id']}\n"                   
         
-
-
-    def delete_teacher(self, teacher_fname, teacher_lname): #DELETE
-        # Will have to delete teacher ids in assigned student key, then will have to prompt to assign new teacher to these.
-        pass
-
-    def enrol_student(self, student): #PUT then #PATCH(assign to teacher's student_ids (append))
-        # assigned teacher_id blank at first?
-        ######### Must have .teacher email address
-        pass
-
-    def assign_student(self, student): #PATCH ################## separate method??????
-        # Will have to check which subject chosen and assign to appropriate teacher.
-        pass
-
-    def search_student(self, student_fname, student_lname): #GET
-        pass
-    
-    
-
-    def delete_student(self, student_fname, student_lname): #DELETE
-        # Will have to delete student ids in assigned teacher key, then will have to prompt if teacher has no more students - more students needed!
-        pass
-
-    def view_students(self): #GET ###########CHange
-        headers = {"Content-Type": "application/json"}  
-        response = requests.get(f"{self.API_URL}/'student_list'", headers=headers)
-        data = response.json()        
-        student_details = [(student["student_id"], student["fname"], student["lname"], student["email"]) for student in data]
-        return(student_details)
-
-class Teacher(User):
-    
-    def __init__(self):
-        super().__init__(self.login_email, self.password)
+            for teacher in self.teacher_list:                
+                if student["assigned_teacher_id"] == teacher["id"]:
+                    assigned_teacher = teacher                                
+                    students_str += f"\n***Assigned teacher***\nName: {assigned_teacher['fname']} {assigned_teacher['lname']}\nSubject: {assigned_teacher['subject']}\nEmail: {assigned_teacher['login_email']}\n\n----------------------------------------------------------------------------------"
         
-        teacher = True
-                        
-        self.assigned_student_names = [requests.get(f"{self.API_URL}/users/teachers/{self.id}/assignedstudent", headers={"Content-Type": "application/json"}).json()]
+        return print(f"\n*****Student info*****\n{students_str}")
+
+
+class Teacher(User):        
+
+    def __init__(self, login_email, password, security=False, teacher=True):
+        super().__init__(login_email, password, security=False, teacher=True)                
+        
+        self.security = security
+        self.teacher = teacher
+        self.assigned_student_names = [requests.get(f"{self.API_URL}/users/teachers/assignedstudent/{self.id}", headers={"Content-Type": "application/json"}).json()]
 
     def view_assigned_students(self):                                
-            
+        '''Displays students assigned to given teacher'''    
         student_str = ""
 
         student_num = 1
@@ -196,58 +377,99 @@ class Teacher(User):
                 student_str += f"\nStudent {student_num}: {name}\n"
                 student_num +=1                                
             
-        return f"\n*****Assigned students*****\n\n{student_str}"                                        
+        return print(f"\n*****Assigned students*****\n\n{student_str}")
         
 
-class Student(User):
-    
-    def __init__(self):
-        super().__init__(self.login_email, self.password)
-        
-        student = True
+class Student(User):        
+
+    def __init__(self, login_email, password, security=False, student=True):
+        super().__init__(login_email, password, security=False, student=True)
                 
-        self.assigned_teacher = requests.get(f"{self.API_URL}/users/students/{self.id}/assignedteacher", headers={"Content-Type": "application/json"}).json()
+        self.security = security
+        self.student = student
+        self.assigned_teacher = requests.get(f"{self.API_URL}/users/students/assignedteacher/{self.id}", headers={"Content-Type": "application/json"}).json()
   
-        def view_assigned_teacher():            
+    def view_assigned_teacher(self):            
+        '''Displays teacher information.'''
+        fname = self.assigned_teacher["fname"]
+        lname = self.assigned_teacher["lname"]
+        email = self.assigned_teacher["login_email"]
+        subject = self.assigned_teacher["subject"]
+        return print(f"\n*****Assigned {subject} teacher*****\n\nName: {fname} {lname}\nEmail: {email}\n")                                                           
             
-            fname = self.assigned_teacher["fname"]
-            lname = self.assigned_teacher["lname"]
-            email = self.assigned_teacher["login_email"]
-            subject = self.assigned_teacher["subject"]
-            return f"\n*****Assigned {subject} teacher*****\n\nName: {fname} {lname}\nEmail: {email}\n"
-                                                   
-   
-class Lesson():
-        
-    def __init__(self, subject):
+
+class Lesson(): ################################ Need to change security to True if switched on
+    
+    API_URL = "http://127.0.0.1:5000"
+    
+    def __init__(self, subject, security=False):
         
         self.subject = subject
+        self.subject_to_search = subject.lower
+        self.security = security
         
         self.subject_list_path = requests.get(f"{self.API_URL}/lessons/English", headers={"Content-Type": "application/json"})
 
         if self.subject_list_path.status_code != 404:
             lessons = self.subject_list_path.json()
 
-        self.lessons = requests.get(f"{self.API_URL}/users/{subject}/lesson_id", 
+        self.lessons = requests.get(f"{self.API_URL}/lessons/{self.subject}", 
                                              headers={"Content-Type": "application/json"}).json()               
         
-        self.current_lesson_id = int(self.return_active_lesson_id("Computer Science"))
+        self.current_lesson_id = int(self.return_active_lesson_id())
         
         self.new_lesson_id = int(self.current_lesson_id) + 1
-    
-    def return_active_lesson_id(self, subject):
+        
+    def return_active_lesson_id(self):
         
         latest_lesson_id = 0
         
-        for lesson in self.lessons:
-            if lesson["subject"].lower() == subject.lower():                
-                if int(lesson["lesson_id"]) > latest_lesson_id:
-                    latest_lesson_id = lesson["lesson_id"]
-            else:
-                return 0 
-        
-        return latest_lesson_id
+        for lesson in self.lessons:                        
             
+            if str(lesson["subject"])== str(self.subject):                
+                if int(lesson["lesson_id"]) > int(latest_lesson_id):
+                    latest_lesson_id = int(lesson["lesson_id"])                                        
+                            
+        return latest_lesson_id
+    
+
+    def format_lesson_output(self, empty_list, lesson_list):
+        '''Used in multiple methods to display lesson info appropriately.'''
+
+        lesson_ID = lesson_list["lesson_id"]
+        subject = lesson_list["subject"]
+        title = lesson_list["title"]
+        lesson_input = lesson_list["input"]
+        
+        q_num = 1
+        question_str = ""
+        for question in lesson_list["questions"]:            
+            question_str += f"\n{q_num}) {question}\n"            
+            q_num += 1
+            continue
+        
+        
+        a_num = 1
+        answer_str = ""
+        if lesson_list["answers"]:
+            for answer in lesson_list["answers"]:
+                answer_str += f"\n{a_num}) {answer}\n"            
+                a_num += 1
+                continue
+        else:
+            answer_str = "**No answers uploaded yet***" 
+        
+        if lesson_list["grade"] != "None":
+            grade = lesson_list["grade"]
+        else:
+            grade = "***Grade not yet given***" 
+    
+        info = f"\nLesson ID: {lesson_ID}\nSubject: {subject}\nTitle: {title}\n\nInput: {lesson_input}\n\nQuestions: \n{question_str}\n\nAnswers: \n{answer_str}\n\nGrade: {grade}\n\n_______________________________________________________________________________"
+    
+        lesson_info_to_return = empty_list.append(info)
+        
+        return lesson_info_to_return
+    
     #### Method called by admin only
     def view_all_lessons(self):
             
@@ -258,56 +480,302 @@ class Lesson():
         
             info_str = "\n".join(lesson_info_to_return)
 
-            return info_str
-    
-    
+            return print(info_str)
+        
+        
     #### Methods called by teachers and students #########
-    def view_all_my_lessons(self, subject):                
+    def view_all_my_lessons(self):                
         
         lesson_info_to_return = []
-
+        print(self.subject)
         for lesson in self.lessons:
-            if lesson["subject"].lower() == subject.lower():
+            if lesson["subject"].lower() == self.subject.lower():
                 self.format_lesson_output(lesson_info_to_return, lesson)
         
         info_str = "\n".join(lesson_info_to_return)
 
-        return info_str
+        return print(info_str)
+    
 
-    def view_my_active_lesson(self, subject, current_lesson_id):            
+    def change_lesson_content(self, title=None, lesson_input=None, 
+                              question_1=None, question_2=None, 
+                              question_3=None, question_4=None, 
+                              question_5=None, answer_1="", answer_2="",
+                              answer_3="", answer_4="", answer_5="",
+                              grade=None):
+        
+        '''Modifies lesson data.'''                
+                
+        new_lesson_data = {
+            "lesson_id": (self.current_lesson_id),
+            "subject": self.subject,
+            "title": title,
+            "input": lesson_input,
+            "question_1": question_1,
+            "question_2": question_2,
+            "question_3": question_3,
+            "question_4": question_4,
+            "question_5": question_5,        
+            "answer_1": answer_1,
+            "answer_2": answer_2,
+            "answer_3": answer_3,
+            "answer_4": answer_4,
+            "answer_5": answer_5,
+            "grade": grade
+        }
+        
+        headers = {"Content-Type": "application/json"}  
+        response = requests.patch(f"{self.API_URL}/lessons/{self.subject}", headers=headers, json=new_lesson_data)
         
         lesson_info_to_return = []
 
+        # If patch was successful...
+        if response.status_code == 201:                        
+                        
+            # Update self.lessons with data added via API to lesson_lis.json
+            self.lessons = requests.get(f"{self.API_URL}/lessons/{self.subject}", 
+                                             headers={"Content-Type": "application/json"}).json()   
+
+            self.format_lesson_output(lesson_info_to_return, self.retrieve_my_active_lesson())
+                        
+            info_str = "\n".join(lesson_info_to_return) 
+            
+            print("\n***Lesson Updated!***\n")
+            return print(info_str)            
+        
+        return("Oops! Something went wrong.")
+
+    def retrieve_my_active_lesson(self):
         for lesson in self.lessons:            
-            if lesson["subject"].lower() == subject.lower() and int(current_lesson_id) == int(lesson["lesson_id"]):
-                self.format_lesson_output(lesson_info_to_return, lesson)
+            
+            if lesson["subject"].lower() == self.subject.lower() and int(self.current_lesson_id) == int(lesson["lesson_id"]):
+                return lesson
+
+    def view_my_active_lesson(self):            
+        
+        lesson_info_to_return = []
+
+        self.format_lesson_output(lesson_info_to_return, self.retrieve_my_active_lesson())
             
         info_str = "\n".join(lesson_info_to_return) 
         
-        return info_str
-   
+        ("\n***Active lesson***\n")        
+        return print(info_str)        
         
+
     ##### Methods called only by teachers.
-    def add_new_lesson(self, subject, title, lesson_input, questions=[], answers=[], grade=None):
-        '''Adds a new lesson, automatically assigning lesson id.'''
+    def add_new_lesson(self):
+        '''Adds a new lesson, automatically assigning lesson id.'''                
+        
+        print("\n***New lesson to upload***")
+        title = input("\nEnter a lesson title: \n")
+        lesson_input = input("\nEnter teacher input: \n")
+        question_1 = (input("Enter question 1: "))
+        question_2 = (input("Enter question 2: "))
+        question_3 = (input("Enter question 3: "))
+        question_4 = (input("Enter question 4: "))
+        question_5 = (input("Enter question 5: "))
         new_lesson_data = {
             "lesson_id": (self.new_lesson_id),
-            "subject": subject,
+            "subject": self.subject,
             "title": title,
             "input": lesson_input,
-            "questions": [questions],        
-            "answers": [answers],
-            "grade": "None"
+            "question_1": question_1,
+            "question_2": question_2,
+            "question_3": question_3,
+            "question_4": question_4,
+            "question_5": question_5,        
+            "answer_1": "",
+            "answer_2": "",
+            "answer_3": "",
+            "answer_4": "",
+            "answer_5": "",
+            "grade": None,
         }
         headers = {"Content-Type": "application/json"}  
-        response = requests.post(f"{self.API_URL}/lessons/{subject}", headers=headers, json=new_lesson_data)
+        response = requests.post(f"{self.API_URL}/lessons/{self.subject}", headers=headers, json=new_lesson_data)
         if response.status_code == 201:
+            
             lesson_info_to_return = []
-            self.format_lesson_output(lesson_info_to_return, new_lesson_data)
-            info_str = "\n".join(lesson_info_to_return) 
-            return info_str
-     
-        return("Oops! Something went wrong.")
+            self.format_lesson_output(lesson_info_to_return, response.json())
+        
+            info_str = "\n".join(lesson_info_to_return)
+            
+            print("\n*********New lesson uploaded***********\n\n")
+            return print(info_str) 
+        
+        return print("Oops! Something went wrong.")
+    
+
+    def update_lesson(self):
+        '''Allows teacher to change the title, lesson input or questions.'''
+        
+        print("\n***Update your active lesson***\n")
+        
+        # Display current, active lesson.
+        self.view_my_active_lesson()           
+        
+        while True:
+            try:
+                title_choice = input("Do you want to change the title? Type 'y' or 'n': ").lower()
+                if title_choice == "y":
+                    title = input("\nEnter a new lesson title: \n")
+                else:
+                    title = None
+                input_choice = input("Do you want to change the teacher input? Type 'y' or 'n': ").lower()
+                if input_choice == "y":
+                    lesson_input = input("\nEnter new teacher input: \n")
+                else:
+                    lesson_input = None                    
+                
+                question_choice_1 = input("Do you want to change question 1? Type 'y' or 'n': ").lower()
+                
+                if question_choice_1 == "y":                    
+                    question_1 = input("\nEnter a new question 1: \n")
+                else:
+                    question_1 = None
+                
+                
+                question_choice_2 = input("Do you want to change question 2? Type 'y' or 'n': ").lower()
+
+                if question_choice_2 == "y":                    
+                    question_2 = input("\nEnter a new question 2: \n")
+                else:
+                    question_2 = None
+                    
+                question_choice_3 = input("Do you want to change question 3? Type 'y' or 'n': ").lower()
+                    
+                if question_choice_3 == "y":                    
+                    question_3 = input("\nEnter a new question 3: \n")
+                else:
+                    question_3 = None
+                    
+                question_choice_4 = input("Do you want to change question 4? Type 'y' or 'n': ").lower()
+                    
+                if question_choice_4 == "y":                    
+                    question_4 = input("\nEnter a new question 4: \n")
+                else:
+                    question_4 = None
+                    
+                question_choice_5 = input("Do you want to change question 5? Type 'y' or 'n': ").lower()
+                    
+                if question_choice_5 == "y":                    
+                    question_5 = input("\nEnter a new question 5: \n")
+                else:
+                    question_5 = None                                        
+                                    
+                break
+            
+            except KeyError:                
+                print("\n!!Choose a valid option!!\n")                
+                
+        self.change_lesson_content(title=title, lesson_input=lesson_input, 
+                              question_1=question_1, question_2=question_2, 
+                              question_3=question_3, question_4=question_4, 
+                              question_5=question_5)
+
+
+    def assign_grade(self):
+        '''Allows a teacher to modify the 'grade' data in an active lesson.'''
+        
+        print("\n***Update your active lesson grade***\n")
+        
+        # Display current, active lesson.
+        self.view_my_active_lesson()     
+
+        grade = input("\nEnter a new grade: \n")
+        
+        self.change_lesson_content(grade=grade)
+    
+
+    # Methods called only by students.
+    def add_answers(self):
+        '''Modifies course content by changing answer values.'''
+        
+        print("\n***Update your active lesson answers***\n")                
+        
+        # Display current, active lesson.
+        self.view_my_active_lesson()
+        
+        while True:
+            try:                             
+                
+                answer_choice_1 = input("Do you want to answer question 1? Type 'y' or 'n': ").lower()
+                
+                if answer_choice_1 == "y":                    
+                    answer_1 = input("\nEnter an answer for question 1: \n")
+                else:
+                    answer_1 = None                
+                
+                answer_choice_2 = input("Do you want to answer question 2? Type 'y' or 'n': ").lower()
+
+                if answer_choice_2 == "y":                    
+                    answer_2 = input("\nEnter an answer for question 2: \n")
+                else:
+                    answer_2 = None
+                    
+                answer_choice_3 = input("Do you want to answer question 3? Type 'y' or 'n': ").lower()
+                    
+                if answer_choice_3 == "y":                    
+                    answer_3 = input("\nEnter an answer for question 3: \n")
+                else:
+                    answer_3 = None
+                    
+                answer_choice_4 = input("Do you want to answer question 4? Type 'y' or 'n': ").lower()
+                    
+                if answer_choice_4 == "y":                    
+                    answer_4 = input("\nEnter an answer for question 4: \n")
+                else:
+                    answer_4 = None
+                    
+                answer_choice_5 = input("Do you want to answer question 5? Type 'y' or 'n': ").lower()
+                    
+                if answer_choice_5 == "y":                    
+                    answer_5 = input("\nEnter an answer for question 5: \n")
+                else:
+                    answer_5 = None                                        
+                                    
+                break
+            
+            except KeyError:                
+                print("\n!!Choose a valid option!!\n")                
+                
+        self.change_lesson_content(answer_1=answer_1, answer_2=answer_2, 
+                              answer_3=answer_3, answer_4=answer_4, 
+                              answer_5=answer_5)                        
+
+
+class Security():
+    
+    def __init__(self, login_attempts):
+        self.login_attempts = login_attempts        
+    
+    CALLS = 4
+    ############ Subtract to show attempts left    
+
+    @sleep_and_retry
+    @limits(calls=5, period=60)
+    def check_limit(self):
+        ''' Empty function just to check for calls to API 
+        and lock some out if suspected DDOS attack'''        
+        return                                                          # Code used from https://stackoverflow.com/questions/40748687/python-api-rate-limiting-how-to-limit-api-calls-globally
+    
+    @sleep_and_retry
+    @limits(calls=3, period=60)
+    def password_attempts_check(self):        
+        '''Monitors login attempts, limiting to 4, with a 60 second lock-out'''
+        if self.login_attempts == 4:
+            return print(f"\n!!! One login attempt remaining until your account is locked !!!\n")            
+            
+        else:                        
+            return
+        
+    def sanitise_input(self, input_str):
+        '''Sanitises input so that it doesn't contain any scripts.'''
+        sanitised_str = re.sub(r'<script\b[^>]*>(.*?)</script>', '', input_str, flags=re.IGNORECASE)    # Code used from https://www.educative.io/answers/how-to-sanitize-user-input-in-python
+        
+        return sanitised_str
+        
                               
 
     

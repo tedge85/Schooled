@@ -1,23 +1,6 @@
-###TO DO####
-# Add subject_taught key to teacher_list, corresponding to subject_studied key to student_list
-
-# Make sure new keys marry up to arguments passed
-# Use tuples - FOR IDS?
-# Check codes correct
-
-###### TEST POST LESSONS METHOD
-
-# USE SIMILAR METHOD FOR POSTING LESSON CONTENT - RESTRICT TEACHERS FROM PUTTING IN ANSWERS?
-
-###### Think again about lesson list ids - id for subject
-
-######SECURITY TO IMPLEMENT#####
-# Logging events??
-# Obfuscate sensitive data in URIs - base64.
-# password attempt limiter
-# HTTPS
-
 import json
+
+from requests import delete
 from flask import Flask, jsonify
 from flask_restful import Api, Resource, reqparse
  
@@ -59,9 +42,85 @@ class Users(Resource):
         return f"{user_list} not found", 404
 
 class Admin(Resource):
-    pass
+    
+    def get(self, email):               
+        for admin in admin_list:
+            if email == admin["login_email"]:
+                
+                return admin, 200        
+            
+        return "User not found", 404
+
+
+    def post(self, email):
+        '''Adds a student to student_list.'''
+        
+        student_list = user_lists["student_list"]
+        
+        parser = reqparse.RequestParser()
+        parser.add_argument("hashed_password")
+        parser.add_argument("id", type=int)
+        parser.add_argument("fname")
+        parser.add_argument("lname")                
+        parser.add_argument("DOB")
+        parser.add_argument("subject")
+        parser.add_argument("current_lesson_id", type=int)
+        parser.add_argument("assigned_teacher_id", type=int) 
+         
+        args = parser.parse_args()
+                                               
+        student = {
+                "login_email": email,                  
+                "hashed_password": args["hashed_password"],
+                "id": (args["id"]),
+                "fname": args["fname"],
+                "lname": args["lname"],
+                "DOB": args["DOB"],
+                "subject": args["subject"],                
+                "current_lesson_id": args["current_lesson_id"],
+                "assigned_teacher_id": args["assigned_teacher_id"]
+                }
+
+        for s in student_list:
+            if s["fname"] == args["fname"] and s["lname"] == args["lname"]:
+                return f"User with name '{args['fname']} {args['lname']}' already exists", 400                                               
+                        
+        student_list.append(student)
+        
+        save_list("student_list", student_list)        
+        
+        student_list = load_list("student_list")
+            
+        return student, 201
+    
+
+    def delete(self, email):
+        '''Removes given student from student_list.'''
+        
+        student_list = user_lists["student_list"]
+
+        initial_list_size = len(student_list)
+
+        student_list = [student for student in student_list if student["login_email"] != email]
+                    
+        
+        if len(student_list) < initial_list_size:
+            
+            save_list("student_list", student_list)
+        
+            student_list = load_list("student_list")    
+            
+            
+            return "\n**Student deleted**\n", 200
+        
+        else:
+            
+            return "!!Student not found!!", 404
+            
+        
 
 class Teacher(Resource):
+    '''Retrieves single teacher data from teacher_list.'''
     
     def get(self, email):
         
@@ -73,21 +132,54 @@ class Teacher(Resource):
                 continue
             
         return "User not found", 404        
+    
+    def patch(self, email):                
+
+        parser = reqparse.RequestParser()        
+        parser.add_argument("student_id", type=int)
+        parser.add_argument("assigned_teacher_id", type=int)        
+         
+        args = parser.parse_args()
+
+        
+        original_list_len = 0
+        amended_list_len = 0 # Initialised with low value so that defaults to not meet below condition if something goes wrong. 
+        
+        for teacher in teacher_list:
+            if int(teacher["id"]) == args["assigned_teacher_id"]:
+                
+                original_list_len = len(teacher["student_ids"])                        
+                
+                teacher["student_ids"].append(args["student_id"])
+
+                amended_list_len = len(teacher["student_ids"])        
+                
+        if original_list_len < amended_list_len:
+            
+            save_list("teacher_list", teacher_list)
+            
+            teacher_list = load_list("teacher_list", teacher_list)
+            
+            return "**List amended**", 200
+        
+        else:
+            return "Teacher not found", 404
+        
 
 class AssignedStudent(Resource): 
     
-     def get(self, id):        
-        id = int(id)
-        
+    def get(self, teacher_id):        
+                
         student_names = []
         for student in student_list:
             
-             if id == int(student["assigned_teacher_id"]):
-                student_names.append(f"{student['fname']} {student['lname']}")
+             if teacher_id == int(student["assigned_teacher_id"]):
+                student_names.append(f"\n{student['fname']} {student['lname']}\nActive lesson ID: {student['current_lesson_id']}\nEmail: {student['login_email']}________________________")
                 
         if student_names:
             return student_names   
-        return "User not found", 404    
+        return "User not found", 404                
+    
 
 class Student(Resource):
     
@@ -99,121 +191,86 @@ class Student(Resource):
             else:
                 continue
             
-        return "User not found", 404            
-        
-    
-        
-        
-        
-    def put(self, name, users): ###################################
+        return "User not found", 404                                                 
+   
+    def post(self, email):
+                    
         parser = reqparse.RequestParser()
-        parser.add_argument("age")
-        parser.add_argument("occupation")
+        parser.add_argument("hashed_password", type=int)
+        parser.add_argument("id", type=int)
+        parser.add_argument("fname", type=str)
+        parser.add_argument("lname", type=str)
+        parser.add_argument("dob", type=str)
+        parser.add_argument("subject", type=str)
+        parser.add_argument("current_lesson_id", type=int)
+        parser.add_argument("assigned_teacher_id", type=int)       
         args = parser.parse_args()
- 
-        for user in users:
-            if(name == user["name"]):
-                user["age"] = args["age"]
-                user["occupation"] = args["occupation"]
-                return user, 200
         
-        user = {
-            "name": name,
-            "age": args["age"],
-            "occupation": args["occupation"]
-        }
-        users.append(user)
-        return user, 201
- 
-    def delete(self, name): #####################################
-        global users
-        users = [user for user in users if user["name"] != name]
-        return "{} is deleted.".format(name), 200
+        original_list_len = len(student_list)
 
+        new_student = {
+                "login_email": email,
+                "hashed_password": args["hashed_password"],
+                "id": args["id"],
+                "fname": args["fname"],
+                "lname": args["lname"],
+                "DOB": args["DOB"],
+                "subject": args["subject"],
+                "current_lesson_id": args["current_lesson_id"],
+                "assigned_teacher_id": args["assigned_teacher_id"]
+                }
+        
+        student_list.append(new_student)
+        
+        amended_list_len = len(student_list)
+        
+        save_list("student_list", student_list)
+                        
+        student_list = load_list("student_list") 
+
+        if original_list_len < amended_list_len:            
+            return "***Student enrolled***", 201
+        
+        else:
+            return "Something went wrong", 400        
+        
 
 class AssignedTeacher(Resource): # change to input just student id?
     
      def get(self, student_id):        
-         
-
+        '''Retrieves students' assigned teachers from teacher_list.'''      
         for teacher in teacher_list:
             #for num in teacher["ids"]:                          
              if int(student_id) in teacher["student_ids"]:
                 return teacher, 200
                 continue
-        return "User not found", 404    
-
-class Admin(Resource):
-    
-    def get(self, email):                
+        return "User not found", 404         
+     
+     def patch(self, student_id):
+        '''Removes a deleted student's id from teacher['student_ids']'''                                     
+        teacher_list = user_lists["teacher_list"]
         
-        if email == admin_list["login_email"]:
-                
-            return admin_list, 200        
+        original_list_len = 0
+        amended_list_len = 0
+        
+        for teacher in teacher_list:
             
-        return "User not found", 404
+            if student_id in teacher["student_ids"]:
+                original_list_len = len(teacher["student_ids"])
+                teacher["student_ids"] = [id_value for id_value in teacher["student_ids"] if id_value != student_id]
+                amended_list_len = len(teacher["student_ids"])
+                continue
+        
+        save_list("teacher_list", teacher_list)
+        
+        teacher_list = load_list("teacher_list")
 
-    def post(self, teacher_lname=None, student_lname=None):
+        if original_list_len > amended_list_len:
+            return "\n***ID deleted***\n", 200
         
-        parser = reqparse.RequestParser()        
-        parser.add_argument("fname")
-        parser.add_argument("login_email")
-        parser.add_argument("hashed_password")        
-        parser.add_argument("DOB")
-        parser.add_argument("current_lesson_id") # Change class method to match subject input to current_lesson_id
-         
-        args = parser.parse_args()
-        
-        if teacher_lname:
-            for t in teacher_list:
-                if(args["fname"] == t["fname"]) and (teacher_lname == t["lname"]):
-                    return f"User with name '{args['fname']} {teacher_lname}' already exists", 400
-                
-        elif student_lname:
-            for s in student_list:
-                if(args["fname"] == s["fname"]) and (student_lname == s["lname"]):
-                    return f"User with name '{args['fname']} {student_lname}' already exists", 400
-        
-        if teacher_lname:
-            
-            # Find what the last id assigned was and add 1 to this to generate new id.
-            last_id = 0
-            for t in teacher_list:
-                if t["id"] > last_id:
-                    last_id = t["id"]                    
-                    continue
-            
-            next_id = last_id + 1
-
-            teacher = {
-                "login_email": args["login_email"],                  
-                "hashed_password": args["hashed_password"],
-                "id": next_id,
-                "fname": args["fname"],
-                "lname": teacher_lname,
-                "DOB": args["DOB"],
-                "current_lesson_id": args["current_lesson_id"],
-                "ids": []
-            }
-            teacher_list.append(teacher)
-            save_list("teacher_list", teacher_list)
-            return teacher, 201
-    
         else:
-            student = {
-                "login_email": args["login_email"],                  
-                "hashed_password": args["hashed_password"],
-                "id": args["id"],
-                "fname": args["fname"],
-                "lname": teacher_lname,
-                "DOB": args["DOB"],
-                "current_lesson_id": args["current_lesson_id"],
-                "id": None # Change logic on class method/cli to assign according to lesson choice. Then assign to teacher
-            }
-                        
-            student_list.append(teacher)
-            save_list("student_list", student_list)
-            return student, 201
+            return "User not found", 404
+        
           
 class Lesson(Resource):
     def get(self, subject):
@@ -223,12 +280,20 @@ class Lesson(Resource):
     def post(self, subject):
         
         parser = reqparse.RequestParser()
-        parser.add_argument("lesson_id")
-        parser.add_argument("title")
-        parser.add_argument("input")
-        parser.add_argument("questions")
-        parser.add_argument("answers")
-        parser.add_argument("grade")
+        parser.add_argument("lesson_id", type=int)
+        parser.add_argument("title", type=str)
+        parser.add_argument("input", type=str)
+        parser.add_argument("question_1", type=str)
+        parser.add_argument("question_2", type=str)
+        parser.add_argument("question_3", type=str)
+        parser.add_argument("question_4", type=str)
+        parser.add_argument("question_5", type=str)
+        parser.add_argument("answer_1", type=str)
+        parser.add_argument("answer_2", type=str)
+        parser.add_argument("answer_3", type=str)
+        parser.add_argument("answer_4", type=str)
+        parser.add_argument("answer_5", type=str)
+        parser.add_argument("grade", type=str)
         args = parser.parse_args()
         
         lesson = {
@@ -236,15 +301,16 @@ class Lesson(Resource):
                 "subject": subject,
                 "title": args["title"],
                 "input": args["input"],
-                "questions": [args["questions"]],
-                "answers": [args["answers"]],
+                "questions": [args["question_1"],args["question_2"], args["question_3"], args["question_4"], args["question_5"]],
+                "answers": [args["answer_1"], args["answer_2"], args["answer_3"], args["answer_4"], args["answer_5"]],
                 "grade": args["grade"]
                 }
         
-        lesson_list.append(lesson)
-        
+        lesson_list.append(lesson)        
 
         save_list("lesson_list", lesson_list)
+        
+        lesson_list = load_list("lesson_list")
 
         return lesson, 201
     
@@ -254,54 +320,105 @@ class Lesson(Resource):
         parser.add_argument("lesson_id", type=int)
         parser.add_argument("title", type=str)
         parser.add_argument("input", type=str)
-        parser.add_argument("questions", type=list)        
-        parser.add_argument("answers", type=list)
+        parser.add_argument("question_1", type=str)
+        parser.add_argument("question_2", type=str)
+        parser.add_argument("question_3", type=str)
+        parser.add_argument("question_4", type=str)
+        parser.add_argument("question_5", type=str)
+        parser.add_argument("answer_1", type=str)
+        parser.add_argument("answer_2", type=str)
+        parser.add_argument("answer_3", type=str)
+        parser.add_argument("answer_4", type=str)
+        parser.add_argument("answer_5", type=str)
         parser.add_argument("grade", type=str)
         
         args = parser.parse_args()
         
         for lesson in lesson_list:
-            if subject == lesson["subject"] and args["lesson_id"] == lesson["lesson_id"]:
+            if str(lesson["subject"]).lower() == str(subject).lower() and (lesson["lesson_id"]) == args["lesson_id"]:                
                 
                 # Don't change automatically assigned lesson ID and subject.
                 lesson["lesson_id"] = lesson["lesson_id"] 
                 lesson["subject"] = lesson["subject"]
                 
-                # Conditions set to change values if keyword arguments provided, otherwise keep them the same.
-                if args["title"]:
+                # Conditions set to change values if keyword arguments provided
+                # otherwise keep them the same.
+                if args["title"] != None:
                     lesson["title"] = args["title"]
                 else:
                     lesson["title"] = lesson["title"]
                 
-                if args["questions"]:
-                    for question in args["questions"]:
-                        lesson["questions"].append(question)
+                if args["question_1"] != None:
+                    lesson["questions"][0] = args["question_1"]                        
+                else:
+                    lesson["questions"] = lesson["questions"]
+                    
+                if args["question_2"] != None:
+                    lesson["questions"][1] = args["question_2"]                        
+                else:
+                    lesson["questions"] = lesson["questions"]
+                
+                if args["question_3"] != None:
+                    lesson["questions"][2] = args["question_3"]                        
+                else:
+                    lesson["questions"] = lesson["questions"]
+                    
+                if args["question_4"] != None:
+                    lesson["questions"][3] = args["question_4"]                        
                 else:
                     lesson["questions"] = lesson["questions"]
                                 
-                if args["answers"]:
-                    for answer in args["answers"]:
-                        lesson["answers"].append(answer)                    
+                if args["question_5"] != None:
+                    lesson["questions"][4] = args["question_5"]                        
+                else:
+                    lesson["questions"] = lesson["questions"]
+
+                if args["answer_1"] != "":
+                    lesson["answers"][0] = args["answer_1"]                        
+                else:
+                    lesson["answers"] = lesson["answers"]
+                    
+                if args["answer_2"] != "":
+                    lesson["answers"][1] = args["answer_2"]                        
+                else:
+                    lesson["answers"] = lesson["answers"]
+                    
+                if args["answer_3"] != "":
+                    lesson["answers"][2] = args["answer_3"]                        
+                else:
+                    lesson["answers"] = lesson["answers"]
+                    
+                if args["answer_4"] != "":
+                    lesson["answers"][3] = args["answer_4"]                        
+                else:
+                    lesson["answers"] = lesson["answers"]
+                    
+                if args["answer_5"] != "":
+                    lesson["answers"][4] = args["answer_5"]                        
                 else:
                     lesson["answers"] = lesson["answers"]
                                                                                 
-                if args["grade"]:                    
+                if args["grade"] != "":                    
                     lesson["grade"] = args["grade"]
                 else:
                     lesson["grade"] = lesson["grade"]                                           
+                            
+                save_list("lesson_list", lesson_list)
+                return lesson, 201
+        
+        save_list("lesson_list", lesson_list)
+        
+        lesson_list = load_list("lesson_list")
 
-                
-            save_list("lesson_list", lesson_list)
-            return lesson, 201
         return "lesson not found", 404
                              
         
 api.add_resource(Users, "/<string:user_list>")
 api.add_resource(Admin, "/users/admins/<string:email>") 
 api.add_resource(Teacher, "/users/teachers/<string:email>")
-api.add_resource(AssignedStudent, "/users/teachers/<int:id>/assignedstudent")
+api.add_resource(AssignedStudent, "/users/teachers/assignedstudent/<int:teacher_id>")
 api.add_resource(Student, "/users/students/<string:email>")
-api.add_resource(AssignedTeacher, "/users/students/<int:student_id>/assignedteacher")
+api.add_resource(AssignedTeacher, "/users/students/assignedteacher/<int:student_id>")
 api.add_resource(Lesson, "/lessons/<subject>")
 app.run(debug=True)
 
