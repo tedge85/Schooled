@@ -1,11 +1,16 @@
 import json
-
+import os
+import base64
+from cryptography.fernet import Fernet
 from requests import delete
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from flask_restful import Api, Resource, reqparse
  
 app = Flask(__name__)
 api = Api(app)
+
+KEY = os.environ.get("ENCRYPTION_KEY")
+FERNET = Fernet(KEY.encode())
 
 def load_list(list_name):
     '''Loads json files - for users or lessons - into dictionaries.'''
@@ -36,6 +41,7 @@ user_lists = {
 
 ################ API endpoints. #####################
 class Users(Resource):
+    
     def get(self, user_list):        
         if user_list in user_lists:
             return user_lists[user_list], 200                        
@@ -135,6 +141,8 @@ class Teacher(Resource):
     
     def patch(self, email):                
 
+        teacher_list = load_list("teacher_list")
+
         parser = reqparse.RequestParser()        
         parser.add_argument("student_id", type=int)
         parser.add_argument("assigned_teacher_id", type=int)        
@@ -158,7 +166,7 @@ class Teacher(Resource):
             
             save_list("teacher_list", teacher_list)
             
-            teacher_list = load_list("teacher_list", teacher_list)
+            teacher_list = load_list("teacher_list")
             
             return "**List amended**", 200
         
@@ -191,48 +199,7 @@ class Student(Resource):
             else:
                 continue
             
-        return "User not found", 404                                                 
-   
-    def post(self, email):
-                    
-        parser = reqparse.RequestParser()
-        parser.add_argument("hashed_password", type=int)
-        parser.add_argument("id", type=int)
-        parser.add_argument("fname", type=str)
-        parser.add_argument("lname", type=str)
-        parser.add_argument("dob", type=str)
-        parser.add_argument("subject", type=str)
-        parser.add_argument("current_lesson_id", type=int)
-        parser.add_argument("assigned_teacher_id", type=int)       
-        args = parser.parse_args()
-        
-        original_list_len = len(student_list)
-
-        new_student = {
-                "login_email": email,
-                "hashed_password": args["hashed_password"],
-                "id": args["id"],
-                "fname": args["fname"],
-                "lname": args["lname"],
-                "DOB": args["DOB"],
-                "subject": args["subject"],
-                "current_lesson_id": args["current_lesson_id"],
-                "assigned_teacher_id": args["assigned_teacher_id"]
-                }
-        
-        student_list.append(new_student)
-        
-        amended_list_len = len(student_list)
-        
-        save_list("student_list", student_list)
-                        
-        student_list = load_list("student_list") 
-
-        if original_list_len < amended_list_len:            
-            return "***Student enrolled***", 201
-        
-        else:
-            return "Something went wrong", 400        
+        return "User not found", 404                                                          
         
 
 class AssignedTeacher(Resource): # change to input just student id?
@@ -316,102 +283,50 @@ class Lesson(Resource):
     
     def patch(self, subject):        
         
-        parser = reqparse.RequestParser()
-        parser.add_argument("lesson_id", type=int)
-        parser.add_argument("title", type=str)
-        parser.add_argument("input", type=str)
-        parser.add_argument("question_1", type=str)
-        parser.add_argument("question_2", type=str)
-        parser.add_argument("question_3", type=str)
-        parser.add_argument("question_4", type=str)
-        parser.add_argument("question_5", type=str)
-        parser.add_argument("answer_1", type=str)
-        parser.add_argument("answer_2", type=str)
-        parser.add_argument("answer_3", type=str)
-        parser.add_argument("answer_4", type=str)
-        parser.add_argument("answer_5", type=str)
+        parser = reqparse.RequestParser()  
+           
         parser.add_argument("grade", type=str)
-        
+        parser.add_argument("encrypted", type=bool)
+           
         args = parser.parse_args()
+            
+        if args["encrypted"] == False:
+                                                                      
+            for lesson in lesson_list:
+               if lesson["subject"] == subject:
+                   lesson["grade"] = args["grade"]
         
-        for lesson in lesson_list:
-            if str(lesson["subject"]).lower() == str(subject).lower() and (lesson["lesson_id"]) == args["lesson_id"]:                
-                
-                # Don't change automatically assigned lesson ID and subject.
-                lesson["lesson_id"] = lesson["lesson_id"] 
-                lesson["subject"] = lesson["subject"]
-                
-                # Conditions set to change values if keyword arguments provided
-                # otherwise keep them the same.
-                if args["title"] != None:
-                    lesson["title"] = args["title"]
-                else:
-                    lesson["title"] = lesson["title"]
-                
-                if args["question_1"] != None:
-                    lesson["questions"][0] = args["question_1"]                        
-                else:
-                    lesson["questions"] = lesson["questions"]
-                    
-                if args["question_2"] != None:
-                    lesson["questions"][1] = args["question_2"]                        
-                else:
-                    lesson["questions"] = lesson["questions"]
-                
-                if args["question_3"] != None:
-                    lesson["questions"][2] = args["question_3"]                        
-                else:
-                    lesson["questions"] = lesson["questions"]
-                    
-                if args["question_4"] != None:
-                    lesson["questions"][3] = args["question_4"]                        
-                else:
-                    lesson["questions"] = lesson["questions"]
-                                
-                if args["question_5"] != None:
-                    lesson["questions"][4] = args["question_5"]                        
-                else:
-                    lesson["questions"] = lesson["questions"]
+        else:
+            encrypted_data = request.data
+       
+            decrypted_data = FERNET.decrypt(encrypted_data).decode("utf-8")
+            data = json.loads(decrypted_data)
+       
+            #if data.get("encrypted") == True:
 
-                if args["answer_1"] != "":
-                    lesson["answers"][0] = args["answer_1"]                        
-                else:
-                    lesson["answers"] = lesson["answers"]
-                    
-                if args["answer_2"] != "":
-                    lesson["answers"][1] = args["answer_2"]                        
-                else:
-                    lesson["answers"] = lesson["answers"]
-                    
-                if args["answer_3"] != "":
-                    lesson["answers"][2] = args["answer_3"]                        
-                else:
-                    lesson["answers"] = lesson["answers"]
-                    
-                if args["answer_4"] != "":
-                    lesson["answers"][3] = args["answer_4"]                        
-                else:
-                    lesson["answers"] = lesson["answers"]
-                    
-                if args["answer_5"] != "":
-                    lesson["answers"][4] = args["answer_5"]                        
-                else:
-                    lesson["answers"] = lesson["answers"]
-                                                                                
-                if args["grade"] != "":                    
-                    lesson["grade"] = args["grade"]
-                else:
-                    lesson["grade"] = lesson["grade"]                                           
-                            
-                save_list("lesson_list", lesson_list)
-                return lesson, 201
+            for lesson in lesson_list:
+               if lesson["subject"] == subject:
+                   lesson["grade"] = data.get("grade")
         
         save_list("lesson_list", lesson_list)
+               
+        return lesson, 200
+       
+       
+       
+           
         
-        lesson_list = load_list("lesson_list")
+       
 
-        return "lesson not found", 404
-                             
+def decrypt_if_encrypted(encrypted_args, args_to_encrypt):
+    '''Decrypts parsed arguments if data is encrypted'''
+    
+    if encrypted_args:
+        (args_to_encrypt.encode()).decode("utf-8")
+        
+    pass
+        
+        
         
 api.add_resource(Users, "/<string:user_list>")
 api.add_resource(Admin, "/users/admins/<string:email>") 

@@ -1,7 +1,7 @@
 [
     {
         "login_email": "teacher1@school.co.uk",
-        "hashed_password": "hsiohji9",
+        "hashed_password": "d901d19c47c56ef48df2c18fcc4278929c5f6732851891e876d0be19f26a96d1",
         "id": 1,
         "fname": "John",
         "lname": "Doe",
@@ -9,13 +9,13 @@
         "subject": "English",
         "current_lesson_id": 1,
         "student_ids": [
-            900,
-            901
+          900,
+          901
         ]
     },
     {
         "login_email": "teacher2@school.co.uk",
-        "hashed_password": "hsiohji9",
+        "hashed_password": "ce5ce93d6ab0ffe84d8615407bcf3eec0b00eeacf79b848102d4a51b6061316a",
         "id": 2,
         "fname": "Jane",
         "lname": "Doe",
@@ -23,12 +23,13 @@
         "subject": "Maths",
         "current_lesson_id": 1,
         "student_ids": [
-            902
+          902,
+          903
         ]
     },
     {
         "login_email": "teacher3@school.co.uk",
-        "hashed_password": "hsiohji9",
+        "hashed_password": "d7bb6292f9338e4859803b4cac69483444692eb38ea6faf6f42c9bec23b6d1e1",
         "id": 3,
         "fname": "Graham",
         "lname": "Teacher",
@@ -39,13 +40,15 @@
     },
     {
         "login_email": "teacher4@school.co.uk",
-        "hashed_password": "hsiohji9",
+        "hashed_password": "0e60ea28ab8bef1ac92274122ecd2db1edc67a58f04bdb11d08bad38d315e93b",
         "id": 4,
         "fname": "Lisa",
         "lname": "Edge",
         "DOB": "22.02.90",
         "subject": "Computer Science",
         "current_lesson_id": 1,
-        "student_ids": []
+        "student_ids": [
+          904
+        ]
     }
 ]

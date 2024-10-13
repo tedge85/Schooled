@@ -1,7 +1,7 @@
 [
     {
         "login_email": "student1@school.co.uk",
-        "hashed_password": "hsiohji9",
+        "hashed_password": "05981c9e36bdac1988a4a21b6aa79669863481a2fa0b2bce7a075aecd585593d",
         "id": 900,
         "fname": "Victoria",
         "lname": "Adams",
@@ -12,7 +12,7 @@
     },
     {
         "login_email": "student2@school.co.uk",
-        "hashed_password": "hsiohji9",
+        "hashed_password": "ed275e7092f41445511531cdd013f780414e73bd5132031fdfb58edc7a62d90d",
         "id": 901,
         "fname": "Dane",
         "lname": "Bowers",
@@ -23,7 +23,7 @@
     },
     {
         "login_email": "student3@school.co.uk",
-        "hashed_password": "hsiohji9",
+        "hashed_password": "3871730d7d99aa91fcb7876c5fb7106836134580c22a47ea568da2ba75f81911",
         "id": 902,
         "fname": "Paloma",
         "lname": "Faith",
@@ -31,5 +31,27 @@
         "subject": "Maths",
         "current_lesson_id": 2,
         "assigned_teacher_id": 2
+    },
+    {
+        "login_email": "student4@school.co.uk",
+        "hashed_password": "7f2e08da0e046b4ce1c906da09489bc8f6c6fdef9c36d9e4b9a013bf2e9d32f3",
+        "id": 903,
+        "fname": "Test",
+        "lname": "Student",
+        "DOB": "11.10.89",
+        "subject": "Maths",
+        "current_lesson_id": 1,
+        "assigned_teacher_id": 2
+    },
+    {
+        "login_email": "student5@school.co.uk",
+        "hashed_password": "85dfb49a5380a51693ef4753f95aa2f3946cfafb2cff689e8ff0d653bb1523c9",
+        "id": 904,
+        "fname": "Alan",
+        "lname": "Turing",
+        "DOB": "12.05.12",
+        "subject": "Computer Science",
+        "current_lesson_id": 1,
+        "assigned_teacher_id": 4
     }
 ]

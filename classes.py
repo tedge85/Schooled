@@ -1,31 +1,28 @@
+import os
 import requests
+import json
 import re
+import hashlib
+from cryptography.fernet import Fernet
 from ratelimit import limits, sleep_and_retry
 
-
-####NOTES########
-# Finish admin menu
-
-
-##### Make multiple lines for long lines, using ''' instead of ''
-
-
+# Generate a key to encrypt API requests.
+KEY = os.environ.get("ENCRYPTION_KEY")
+FERNET = Fernet(KEY.encode())
 
 class User():
     
-    API_URL = "http://127.0.0.1:5000"
+    API_URL = "http://127.0.0.1:5000" 
        
-    def __init__(self, login_email, password, security=False, admin=False, teacher=False, student=False):
-                                
+    def __init__(self, login_email, password, security_object, security=False, admin=False, teacher=False, student=False):
+                  
         self.login_email = login_email 
         self.password = password                                        
+        self.secure_user = security_object
         self.admin = admin
         self.teacher = teacher
         self.student = student
-        self.security = security
-                
-        if security:
-            API_URL = "https://127.0.0.1:5000"
+        self.security = security                      
 
         if self.admin:
             self.user = "admin"
@@ -34,7 +31,9 @@ class User():
         else:
             self.user = "student"
         
-        self.user_info = requests.get(f"{self.API_URL}/users/{self.user}s/{self.login_email}", headers={"Content-Type": "application/json"}).json() 
+        if self.security:
+            self.secure_user.check_limit()
+        self.user_info = requests.get(f"{self.API_URL}/users/{self.user}s/{self.login_email}", verify=False, headers={"Content-Type": "application/json"}).json() 
         
         self.fname = self.user_info["fname"]
         self.lname = self.user_info["lname"]
@@ -57,20 +56,19 @@ class User():
 
 class Admin(User):            
 
-    def __init__(self, login_email, password, security=False, admin=True):
-        super().__init__(login_email, password, security=False, admin=True)
+    def __init__(self, login_email, password, security_object, security=False, admin=True):
+        super().__init__(login_email, password, security_object, security=False, admin=True)
         
-        self.admin_list = requests.get(f"{self.API_URL}/admin_list", headers={"Content-Type": "application/json"}).json()        
-        self.teacher_list = requests.get(f"{self.API_URL}/teacher_list", headers={"Content-Type": "application/json"}).json()
-        self.student_list = requests.get(f"{self.API_URL}/student_list", headers={"Content-Type": "application/json"}).json()
+        self.secure_user = security_object
+        if self.security:
+            self.secure_user.check_limit()
+        self.admin_list = requests.get(f"{self.API_URL}/admin_list", verify=False, headers={"Content-Type": "application/json"}).json()        
+        self.teacher_list = requests.get(f"{self.API_URL}/teacher_list", verify=False, headers={"Content-Type": "application/json"}).json()
+        self.student_list = requests.get(f"{self.API_URL}/student_list", verify=False, headers={"Content-Type": "application/json"}).json()
 
         self.security = security
-        self.admin = admin
-
-        if self.security:
-            self.secure_user = Security(1)
-
-
+        self.admin = admin                            
+        
     def enrol_student(self):
         '''Registers a student user and adds them to student_list.json'''                    
         
@@ -79,18 +77,23 @@ class Admin(User):
         new_student_email_num = self.return_new_student_email_number()
         
         login_email = f"student{new_student_email_num}@school.co.uk"
-        hashed_password = input("\nEnter a password for this user: ")
+                        
+        password = self.secure_user.sanitise_input(input("\nEnter a password for this user: "))
+        
+        # Hash the given password.        
+        hashed_password = self.secure_user.hash_password(password) 
+
         student_id = self.return_new_student_id()
-        fname = input("\nEnter new student's first name: ")
-        lname = input("\nEnter new student's last name: ")
-        dob = input("\nEnter new student's date of birth(DD.MM.YY): ")
+        fname = self.secure_user.sanitise_input(input("\nEnter new student's first name: "))
+        lname = self.secure_user.sanitise_input(input("\nEnter new student's last name: "))
+        dob = self.secure_user.sanitise_input(input("\nEnter new student's date of birth (DD.MM.YY): "))
         while True:
             try:
-                subject = (input('''\n**What subject will they be studying?**
+                subject = self.secure_user.sanitise_input(input('''\n**What subject will they be studying?**
                                  \nType 'E' for 'English': 
                                  \nType 'M' for 'Maths': 
                                  \nType 'S' for 'Science': 
-                                 \nType 'C' for 'Computer Science': ''')).lower()
+                                 \nType 'C' for 'Computer Science': ''').lower())
                 
                 if subject == "e":
                     subject = "English"
@@ -125,6 +128,10 @@ class Admin(User):
             }
 
         headers = {"Content-Type": "application/json"}  
+        
+        if self.security:
+            self.secure_user.check_limit()
+            
         response = requests.post(f"{self.API_URL}/users/admins/{login_email}", headers=headers, json=new_student_data)
         
         if response.status_code == 201:
@@ -133,6 +140,8 @@ class Admin(User):
             self.assign_new_student_to_teacher(login_email, student_id, assigned_teacher_id)        
 
             # Re-load teacher and student list instance variables so that they are up-to-date.
+            if self.security:
+                self.secure_user.check_limit()
             self.student_list = requests.get(f"{self.API_URL}/student_list", headers={"Content-Type": "application/json"}).json()
 
             self.teacher_list = requests.get(f"{self.API_URL}/teacher_list", headers={"Content-Type": "application/json"}).json()            
@@ -157,6 +166,8 @@ class Admin(User):
         # Call patch request to update teacher record.
         headers = {"Content-Type": "application/json"}
         
+        if self.security:
+            self.secure_user.check_limit()
         response = requests.patch(f"{self.API_URL}/users/teachers/{email}", headers=headers, json=new_student_data)
         
         if response.status_code == 200:
@@ -203,8 +214,8 @@ class Admin(User):
         '''Removes given student from student_list.json'''
         
         print("***UNENROL STUDENT***")
-        fname = input(f"\nEnter first name of student to unenrol: ").lower()
-        lname = input(f"\nEnter last name of student to unenrol: ").lower()            
+        fname = self.secure_user.sanitise_input(input(f"\nEnter first name of student to unenrol: ").lower())
+        lname = self.secure_user.sanitise_input(input(f"\nEnter last name of student to unenrol: ").lower())
         
         for student in self.student_list:
             
@@ -218,6 +229,8 @@ class Admin(User):
                     try:
                         decision = input("\n!!Are you sure you want to delete this student?!!\n\nSelect 'y' or 'n': ").lower()
                         if decision == "y":
+                            if self.security:
+                                self.secure_user.check_limit()
                             make_request = requests.delete(f"{self.API_URL}/users/admins/{email}", headers={"Content-Type": "application/json"})
                             make_request
             
@@ -230,12 +243,15 @@ class Admin(User):
                     except KeyError:
                         "!!Choose 'y' or 'n'!!"  
 
+                if self.security:
+                    self.secure_user.check_limit()
                 make_request_to_alter_list = requests.delete(f"{self.API_URL}/users/admins/{email}", headers={"Content-Type": "application/json"})
                 make_request_to_alter_list 
                 
                 self.remove_student_id_from_teacher_data(id_to_delete) # Ensure assigned teacher's record removes deleted student ID from their record.
 
                 # Re-load teacher and student list instance variables so that they are up-to-date.
+                self.secure_user.check_limit()
                 self.student_list = requests.get(f"{self.API_URL}/student_list", headers={"Content-Type": "application/json"}).json()
                 
                 self.teacher_list = requests.get(f"{self.API_URL}/teacher_list", headers={"Content-Type": "application/json"}).json()                                
@@ -249,6 +265,8 @@ class Admin(User):
         '''Makes a PATCH request to API to remove deleted student's id from 
         teacher['student_ids']'''                
 
+        if self.security:
+            self.secure_user.check_limit()
         headers = {"Content-Type": "application/json"}
         make_request = requests.patch(f"{self.API_URL}/users/students/assignedteacher/{id_to_delete}", headers=headers)
         make_request
@@ -262,7 +280,7 @@ class Admin(User):
             try:
                 print("\n***Search for Teacher or Student***\n")
                 
-                user_list = input("Type 't' to search for teacher or 's' to search for a student: ").lower()
+                user_list = self.secure_user.sanitise_input(input("Type 't' to search for teacher or 's' to search for a student: ").lower())
                 
                 if user_list == "t":
                     user_list = self.teacher_list
@@ -275,14 +293,11 @@ class Admin(User):
             except ValueError:
                 "Choose a valid option."
                 
-        if self.security:
-            fname = self.secure_user.sanitise_input(input(f"\nEnter {user_type}'s first name: ")).lower()
+        #if self.security:
+        fname = self.secure_user.sanitise_input(input(f"\nEnter {user_type}'s first name: ")).lower()
             
-            lname = self.secure_user.sanitise_input(input(f"\nEnter {user_type}'s last name: ")).lower()
-            
-        else:
-            fname = input(f"\nEnter {user_type}'s first name: ").lower()
-            lname = input(f"\nEnter {user_type}'s last name: ").lower()            
+        lname = self.secure_user.sanitise_input(input(f"\nEnter {user_type}'s last name: ")).lower()
+                             
         for user in user_list:
             if user["fname"].lower() == fname and user["lname"].lower() == lname:
                 return self.view_users_info(user)        
@@ -341,6 +356,8 @@ class Admin(User):
         '''Displays all students and corresponding info.'''
 
         # Re-load teacher and student list instance variables so that they are up-to-date.
+        if self.security:
+            self.secure_user.check_limit()
         self.student_list = requests.get(f"{self.API_URL}/student_list", headers={"Content-Type": "application/json"}).json()
         self.teacher_list = requests.get(f"{self.API_URL}/teacher_list", headers={"Content-Type": "application/json"}).json()            
 
@@ -359,12 +376,16 @@ class Admin(User):
 
 class Teacher(User):        
 
-    def __init__(self, login_email, password, security=False, teacher=True):
-        super().__init__(login_email, password, security=False, teacher=True)                
+    def __init__(self, login_email, password, security_object, security=False, teacher=True):
+        super().__init__(login_email, password, security_object, security=False, teacher=True)                
         
-        self.security = security
+        self.security = security        
+        self.secure_user = security_object    
         self.teacher = teacher
-        self.assigned_student_names = [requests.get(f"{self.API_URL}/users/teachers/assignedstudent/{self.id}", headers={"Content-Type": "application/json"}).json()]
+        
+        if self.security:
+            self.secure_user.check_limit()
+        self.assigned_student_names = [requests.get(f"{self.API_URL}/users/teachers/assignedstudent/{self.id}", verify=False, headers={"Content-Type": "application/json"}).json()]
 
     def view_assigned_students(self):                                
         '''Displays students assigned to given teacher'''    
@@ -382,12 +403,16 @@ class Teacher(User):
 
 class Student(User):        
 
-    def __init__(self, login_email, password, security=False, student=True):
-        super().__init__(login_email, password, security=False, student=True)
+    def __init__(self, login_email, password, security_object, security=False, student=True):
+        super().__init__(login_email, password, security_object, security=False, student=True)
                 
-        self.security = security
+        self.security = security        
+        self.secure_user = security_object    
         self.student = student
-        self.assigned_teacher = requests.get(f"{self.API_URL}/users/students/assignedteacher/{self.id}", headers={"Content-Type": "application/json"}).json()
+        
+        if self.security:
+            self.secure_user.check_limit()
+        self.assigned_teacher = requests.get(f"{self.API_URL}/users/students/assignedteacher/{self.id}", verify=False, headers={"Content-Type": "application/json"}).json()
   
     def view_assigned_teacher(self):            
         '''Displays teacher information.'''
@@ -408,12 +433,18 @@ class Lesson(): ################################ Need to change security to True
         self.subject_to_search = subject.lower
         self.security = security
         
-        self.subject_list_path = requests.get(f"{self.API_URL}/lessons/English", headers={"Content-Type": "application/json"})
+        self.secure_lesson = Security(1, security=self.security)
+
+        if self.security:            
+            self.secure_lesson.check_limit()
+        self.subject_list_path = requests.get(f"{self.API_URL}/lessons/{self.subject}", verify=False, headers={"Content-Type": "application/json"})
 
         if self.subject_list_path.status_code != 404:
             lessons = self.subject_list_path.json()
 
-        self.lessons = requests.get(f"{self.API_URL}/lessons/{self.subject}", 
+        if self.security:
+            self.secure_lesson.check_limit()
+        self.lessons = requests.get(f"{self.API_URL}/lessons/{self.subject}", verify=False, 
                                              headers={"Content-Type": "application/json"}).json()               
         
         self.current_lesson_id = int(self.return_active_lesson_id())
@@ -521,19 +552,30 @@ class Lesson(): ################################ Need to change security to True
             "answer_3": answer_3,
             "answer_4": answer_4,
             "answer_5": answer_5,
-            "grade": grade
+            "grade": grade,
+            "encrypted": self.security # Let server know if this data is encrypted.
         }
         
-        headers = {"Content-Type": "application/json"}  
-        response = requests.patch(f"{self.API_URL}/lessons/{self.subject}", headers=headers, json=new_lesson_data)
+        headers = {"Content-Type": "application/json"}
+        
+        if self.security:
+            self.secure_lesson.check_limit()
+            data_string = json.dumps(new_lesson_data).encode("utf-8")
+            new_lesson_data = FERNET.encrypt(data_string)
+            response = requests.patch(f"{self.API_URL}/lessons/{self.subject}", headers=headers, data=new_lesson_data)
+            
+        else: 
+            response = requests.patch(f"{self.API_URL}/lessons/{self.subject}", headers=headers, json=new_lesson_data)
         
         lesson_info_to_return = []
 
         # If patch was successful...
-        if response.status_code == 201:                        
+        if response.status_code == 200:                 
                         
             # Update self.lessons with data added via API to lesson_lis.json
-            self.lessons = requests.get(f"{self.API_URL}/lessons/{self.subject}", 
+            if self.security:
+                self.secure_lesson.check_limit()
+            self.lessons = requests.get(f"{self.API_URL}/lessons/{self.subject}",   
                                              headers={"Content-Type": "application/json"}).json()   
 
             self.format_lesson_output(lesson_info_to_return, self.retrieve_my_active_lesson())
@@ -543,7 +585,8 @@ class Lesson(): ################################ Need to change security to True
             print("\n***Lesson Updated!***\n")
             return print(info_str)            
         
-        return("Oops! Something went wrong.")
+        else:
+            return print(("Oops! Something went wrong."))
 
     def retrieve_my_active_lesson(self):
         for lesson in self.lessons:            
@@ -568,13 +611,13 @@ class Lesson(): ################################ Need to change security to True
         '''Adds a new lesson, automatically assigning lesson id.'''                
         
         print("\n***New lesson to upload***")
-        title = input("\nEnter a lesson title: \n")
-        lesson_input = input("\nEnter teacher input: \n")
-        question_1 = (input("Enter question 1: "))
-        question_2 = (input("Enter question 2: "))
-        question_3 = (input("Enter question 3: "))
-        question_4 = (input("Enter question 4: "))
-        question_5 = (input("Enter question 5: "))
+        title = self.secure_lesson.sanitise_input(input("\nEnter a lesson title: \n"))
+        lesson_input = self.secure_lesson.sanitise_input(input("\nEnter teacher input: \n"))
+        question_1 = self.secure_lesson.sanitise_input(input("Enter question 1: "))
+        question_2 = self.secure_lesson.sanitise_input(input("Enter question 2: "))
+        question_3 = self.secure_lesson.sanitise_input(input("Enter question 3: "))
+        question_4 = self.secure_lesson.sanitise_input(input("Enter question 4: "))
+        question_5 = self.secure_lesson.sanitise_input(input("Enter question 5: "))
         new_lesson_data = {
             "lesson_id": (self.new_lesson_id),
             "subject": self.subject,
@@ -593,6 +636,9 @@ class Lesson(): ################################ Need to change security to True
             "grade": None,
         }
         headers = {"Content-Type": "application/json"}  
+        
+        if self.security:
+            self.secure_lesson.check_limit()
         response = requests.post(f"{self.API_URL}/lessons/{self.subject}", headers=headers, json=new_lesson_data)
         if response.status_code == 201:
             
@@ -617,52 +663,58 @@ class Lesson(): ################################ Need to change security to True
         
         while True:
             try:
-                title_choice = input("Do you want to change the title? Type 'y' or 'n': ").lower()
+                
+                # Ask user which parts of the lesson they wish to change and default to None or "" so that the endpoint can
+                # keep the values as they were if they detect these None or "" values.
+                title_choice = self.secure_lesson.sanitise_input(input("Do you want to change the title? Type 'y' or 'n': ").lower())
+                
                 if title_choice == "y":
-                    title = input("\nEnter a new lesson title: \n")
+                    title = self.secure_lesson.sanitise_input(input("\nEnter a new lesson title: \n"))
+                
                 else:
                     title = None
-                input_choice = input("Do you want to change the teacher input? Type 'y' or 'n': ").lower()
+                    
+                input_choice = self.secure_lesson.sanitise_input(input("Do you want to change the teacher input? Type 'y' or 'n': ").lower())
+                
                 if input_choice == "y":
-                    lesson_input = input("\nEnter new teacher input: \n")
+                    lesson_input = self.secure_lesson.sanitise_input(input("\nEnter new teacher input: \n"))
                 else:
                     lesson_input = None                    
                 
-                question_choice_1 = input("Do you want to change question 1? Type 'y' or 'n': ").lower()
+                question_choice_1 = self.secure_lesson.sanitise_input(input("Do you want to change question 1? Type 'y' or 'n': ").lower())
                 
                 if question_choice_1 == "y":                    
-                    question_1 = input("\nEnter a new question 1: \n")
+                    question_1 = self.secure_lesson.sanitise_input(input("\nEnter a new question 1: \n"))
                 else:
-                    question_1 = None
-                
-                
-                question_choice_2 = input("Do you want to change question 2? Type 'y' or 'n': ").lower()
+                    question_1 = ""
+                                
+                question_choice_2 = self.secure_lesson.sanitise_input(input("Do you want to change question 2? Type 'y' or 'n': ").lower())
 
                 if question_choice_2 == "y":                    
-                    question_2 = input("\nEnter a new question 2: \n")
+                    question_2 = self.secure_lesson.sanitise_input(input("\nEnter a new question 2: \n"))
                 else:
-                    question_2 = None
+                    question_2 = ""
                     
-                question_choice_3 = input("Do you want to change question 3? Type 'y' or 'n': ").lower()
+                question_choice_3 = self.secure_lesson.sanitise_input(input("Do you want to change question 3? Type 'y' or 'n': ").lower())
                     
                 if question_choice_3 == "y":                    
-                    question_3 = input("\nEnter a new question 3: \n")
+                    question_3 = self.secure_lesson.sanitise_input(input("\nEnter a new question 3: \n"))
                 else:
-                    question_3 = None
+                    question_3 = ""
                     
-                question_choice_4 = input("Do you want to change question 4? Type 'y' or 'n': ").lower()
+                question_choice_4 = self.secure_lesson.sanitise_input(input("Do you want to change question 4? Type 'y' or 'n': ").lower())
                     
                 if question_choice_4 == "y":                    
-                    question_4 = input("\nEnter a new question 4: \n")
+                    question_4 = self.secure_lesson.sanitise_input(input("\nEnter a new question 4: \n"))
                 else:
-                    question_4 = None
+                    question_4 = ""
                     
-                question_choice_5 = input("Do you want to change question 5? Type 'y' or 'n': ").lower()
+                question_choice_5 = self.secure_lesson.sanitise_input(input("Do you want to change question 5? Type 'y' or 'n': ").lower())
                     
                 if question_choice_5 == "y":                    
-                    question_5 = input("\nEnter a new question 5: \n")
+                    question_5 = self.secure_lesson.sanitise_input(input("\nEnter a new question 5: \n"))
                 else:
-                    question_5 = None                                        
+                    question_5 = ""
                                     
                 break
             
@@ -683,7 +735,7 @@ class Lesson(): ################################ Need to change security to True
         # Display current, active lesson.
         self.view_my_active_lesson()     
 
-        grade = input("\nEnter a new grade: \n")
+        grade = self.secure_lesson.sanitise_input(input("\nEnter a new grade: \n"))
         
         self.change_lesson_content(grade=grade)
     
@@ -700,40 +752,40 @@ class Lesson(): ################################ Need to change security to True
         while True:
             try:                             
                 
-                answer_choice_1 = input("Do you want to answer question 1? Type 'y' or 'n': ").lower()
+                answer_choice_1 = self.secure_lesson.sanitise_input(input("Do you want to answer question 1? Type 'y' or 'n': ").lower())
                 
                 if answer_choice_1 == "y":                    
-                    answer_1 = input("\nEnter an answer for question 1: \n")
+                    answer_1 = self.secure_lesson.sanitise_input(input("\nEnter an answer for question 1: \n"))
                 else:
-                    answer_1 = None                
+                    answer_1 = ""                
                 
-                answer_choice_2 = input("Do you want to answer question 2? Type 'y' or 'n': ").lower()
+                answer_choice_2 = self.secure_lesson.sanitise_input(input("Do you want to answer question 2? Type 'y' or 'n': ").lower())
 
                 if answer_choice_2 == "y":                    
-                    answer_2 = input("\nEnter an answer for question 2: \n")
+                    answer_2 = self.secure_lesson.sanitise_input(input("\nEnter an answer for question 2: \n"))
                 else:
-                    answer_2 = None
+                    answer_2 = ""
                     
-                answer_choice_3 = input("Do you want to answer question 3? Type 'y' or 'n': ").lower()
+                answer_choice_3 = self.secure_lesson.sanitise_input(input("Do you want to answer question 3? Type 'y' or 'n': ").lower())
                     
                 if answer_choice_3 == "y":                    
-                    answer_3 = input("\nEnter an answer for question 3: \n")
+                    answer_3 = self.secure_lesson.sanitise_input(input("\nEnter an answer for question 3: \n"))
                 else:
-                    answer_3 = None
+                    answer_3 = ""
                     
-                answer_choice_4 = input("Do you want to answer question 4? Type 'y' or 'n': ").lower()
+                answer_choice_4 = self.secure_lesson.sanitise_input(input("Do you want to answer question 4? Type 'y' or 'n': ").lower())
                     
                 if answer_choice_4 == "y":                    
-                    answer_4 = input("\nEnter an answer for question 4: \n")
+                    answer_4 = self.secure_lesson.sanitise_input(input("\nEnter an answer for question 4: \n"))
                 else:
-                    answer_4 = None
+                    answer_4 = ""
                     
-                answer_choice_5 = input("Do you want to answer question 5? Type 'y' or 'n': ").lower()
+                answer_choice_5 = self.secure_lesson.sanitise_input(input("Do you want to answer question 5? Type 'y' or 'n': ").lower())
                     
                 if answer_choice_5 == "y":                    
                     answer_5 = input("\nEnter an answer for question 5: \n")
                 else:
-                    answer_5 = None                                        
+                    answer_5 = ""
                                     
                 break
             
@@ -747,19 +799,22 @@ class Lesson(): ################################ Need to change security to True
 
 class Security():
     
-    def __init__(self, login_attempts):
+    def __init__(self, login_attempts, security=False):
+                
         self.login_attempts = login_attempts        
-    
+        self.security = security
+
     CALLS = 4
     ############ Subtract to show attempts left    
 
     @sleep_and_retry
-    @limits(calls=5, period=60)
+    @limits(calls=20, period=60)
     def check_limit(self):
         ''' Empty function just to check for calls to API 
         and lock some out if suspected DDOS attack'''        
         return                                                          # Code used from https://stackoverflow.com/questions/40748687/python-api-rate-limiting-how-to-limit-api-calls-globally
     
+
     @sleep_and_retry
     @limits(calls=3, period=60)
     def password_attempts_check(self):        
@@ -770,11 +825,22 @@ class Security():
         else:                        
             return
         
+
     def sanitise_input(self, input_str):
         '''Sanitises input so that it doesn't contain any scripts.'''
         sanitised_str = re.sub(r'<script\b[^>]*>(.*?)</script>', '', input_str, flags=re.IGNORECASE)    # Code used from https://www.educative.io/answers/how-to-sanitize-user-input-in-python
         
-        return sanitised_str
+        # Sanitise input if security is activated.
+        if self.security: 
+            return sanitised_str
+        else:
+            return input_str
+
+    
+    def hash_password(self, password):
+        '''Hashes a given password.'''
+
+        return hashlib.sha256(password.encode()).hexdigest()
         
                               
 

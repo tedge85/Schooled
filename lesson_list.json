@@ -18,7 +18,7 @@
             "huh?",
             "Panama?"
         ],
-        "grade": "C"
+        "grade": "a"
     },
     {
         "lesson_id": 2,
@@ -39,7 +39,7 @@
             "huh?",
             "Panama?"
         ],
-        "grade": "B"
+        "grade": "a"
     },
     {
         "lesson_id": 1,
@@ -144,6 +144,6 @@
             "a",
             "a"
         ],
-        "grade": null
+        "grade": "a"
     }
 ]
