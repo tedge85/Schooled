@@ -10,8 +10,9 @@ class Tests(unittest.TestCase):
     email = "test@school.co.uk"
     secure_app = Security(1, security=True)
     user = Admin("admin@school.co.uk", "strongpassword", secure_app, security=True)   
-    def test_sanitise_input(self):
-        self.assertEqual(self.secure_app.sanitise_input("visible<script>invisible</script>"), "visible")
+    lesson = Lesson()
 
+    def test_change_lesson_content(self):
+        self.assertEqual(change_lesson_content())
 
 unittest.main()

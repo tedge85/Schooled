@@ -36,7 +36,8 @@ lesson_list = load_list("lesson_list")
 user_lists = {
     "student_list": student_list,
     "teacher_list": teacher_list,
-    "admin_list": admin_list
+    "admin_list": admin_list,
+    "lesson_list": lesson_list
 }
 
 ################ API endpoints. #####################
@@ -240,9 +241,17 @@ class AssignedTeacher(Resource): # change to input just student id?
         
           
 class Lesson(Resource):
+    
     def get(self, subject):
-        return lesson_list, 201
-        return "Lessons not found", 404
+        
+        lesson_list = load_list("lesson_list")
+        
+
+        if lesson_list:
+            return lesson_list, 201
+        
+        else:
+            return "Lessons not found", 404
 
     def post(self, subject):
         
@@ -281,53 +290,233 @@ class Lesson(Resource):
 
         return lesson, 201
     
-    def patch(self, subject):        
+    def patch(self, subject):     
         
-        parser = reqparse.RequestParser()  
-           
+
+        lesson_list = load_list("lesson_list")
+        
+        parser = reqparse.RequestParser()        
+        parser.add_argument("lesson_id", type=int)
+        parser.add_argument("title", type=str)
+        parser.add_argument("input", type=str)
+        parser.add_argument("question_1", type=str)
+        parser.add_argument("question_2", type=str)
+        parser.add_argument("question_3", type=str)
+        parser.add_argument("question_4", type=str)
+        parser.add_argument("question_5", type=str)
+        parser.add_argument("answer_1", type=str)
+        parser.add_argument("answer_2", type=str)
+        parser.add_argument("answer_3", type=str)
+        parser.add_argument("answer_4", type=str)
+        parser.add_argument("answer_5", type=str)
         parser.add_argument("grade", type=str)
-        parser.add_argument("encrypted", type=bool)
-           
-        args = parser.parse_args()
-            
-        if args["encrypted"] == False:
-                                                                      
-            for lesson in lesson_list:
-               if lesson["subject"] == subject:
-                   lesson["grade"] = args["grade"]
-        
-        else:
-            encrypted_data = request.data
-       
-            decrypted_data = FERNET.decrypt(encrypted_data).decode("utf-8")
-            data = json.loads(decrypted_data)
-       
-            #if data.get("encrypted") == True:
-
-            for lesson in lesson_list:
-               if lesson["subject"] == subject:
-                   lesson["grade"] = data.get("grade")
-        
-        save_list("lesson_list", lesson_list)
-               
-        return lesson, 200
-       
-       
-       
-           
-        
-       
-
-def decrypt_if_encrypted(encrypted_args, args_to_encrypt):
-    '''Decrypts parsed arguments if data is encrypted'''
     
-    if encrypted_args:
-        (args_to_encrypt.encode()).decode("utf-8")
+        args = parser.parse_args()                
+ 
+        for lesson in lesson_list:
+            if str(lesson["subject"]).lower() == str(subject).lower() and (lesson["lesson_id"]) == args["lesson_id"]:                
+         
+                # Don't change automatically assigned lesson ID and subject.
+                lesson["lesson_id"] = lesson["lesson_id"] 
+                lesson["subject"] = lesson["subject"]
+         
+                # Conditions set to change values if keyword arguments provided
+                # otherwise keep them the same.                                
+                if args["title"] != None:                    
+                    lesson["title"] = args["title"]
+                else:
+                    lesson["title"] = lesson["title"]
+         
+                if args["question_1"] != "":
+                    lesson["questions"][0] = args["question_1"]                        
+                else:
+                    lesson["questions"] = lesson["questions"]
+             
+                if args["question_2"] != "":
+                    lesson["questions"][1] = args["question_2"]                        
+                else:
+                    lesson["questions"] = lesson["questions"]
+         
+                if args["question_3"] != "":
+                    lesson["questions"][2] = args["question_3"]                        
+                else:
+                    lesson["questions"] = lesson["questions"]
+             
+                if args["question_4"] != "":
+                    lesson["questions"][3] = args["question_4"]                        
+                else:
+                    lesson["questions"] = lesson["questions"]
+                         
+                if args["question_5"] != "":
+                    lesson["questions"][4] = args["question_5"]                        
+                else:
+                    lesson["questions"] = lesson["questions"]
+
+                if args["answer_1"] != "":
+                    lesson["answers"][0] = args["answer_1"]                        
+                else:
+                    lesson["answers"] = lesson["answers"]
+             
+                if args["answer_2"] != "":
+                    lesson["answers"][1] = args["answer_2"]                        
+                else:
+                    lesson["answers"] = lesson["answers"]
+             
+                if args["answer_3"] != "":
+                    lesson["answers"][2] = args["answer_3"]                        
+                else:
+                    lesson["answers"] = lesson["answers"]
+             
+                if args["answer_4"] != "":
+                    lesson["answers"][3] = args["answer_4"]                        
+                else:
+                    lesson["answers"] = lesson["answers"]
+             
+                if args["answer_5"] != "":
+                    lesson["answers"][4] = args["answer_5"]                        
+                else:
+                    lesson["answers"] = lesson["answers"]
+                                                                         
+                if args["grade"] != None:
+                   lesson["grade"] = args["grade"]
+            
+                else:
+                    lesson["grade"] = lesson["grade"]                                           
+                
+                
+                                                   
+        save_list("lesson_list", lesson_list)
+                 
+                
+        return lesson, 200
+                                
+                              
+class SecureLesson(Resource):
+    
+    def post(self, subject):
         
-    pass
+        parser = reqparse.RequestParser()
+        parser.add_argument("lesson_id", type=int)
+        parser.add_argument("title", type=str)
+        parser.add_argument("input", type=str)
+        parser.add_argument("question_1", type=str)
+        parser.add_argument("question_2", type=str)
+        parser.add_argument("question_3", type=str)
+        parser.add_argument("question_4", type=str)
+        parser.add_argument("question_5", type=str)
+        parser.add_argument("answer_1", type=str)
+        parser.add_argument("answer_2", type=str)
+        parser.add_argument("answer_3", type=str)
+        parser.add_argument("answer_4", type=str)
+        parser.add_argument("answer_5", type=str)
+        parser.add_argument("grade", type=str)
+        args = parser.parse_args()
         
+        lesson = {
+                "lesson_id": args["lesson_id"],
+                "subject": subject,
+                "title": args["title"],
+                "input": args["input"],
+                "questions": [args["question_1"],args["question_2"], args["question_3"], args["question_4"], args["question_5"]],
+                "answers": [args["answer_1"], args["answer_2"], args["answer_3"], args["answer_4"], args["answer_5"]],
+                "grade": args["grade"]
+                }
         
+        lesson_list.append(lesson)        
+
+        save_list("lesson_list", lesson_list)
         
+        lesson_list = load_list("lesson_list")
+
+        return lesson, 201
+
+
+    def patch(self, subject):
+        
+        lesson_list = load_list("lesson_list")
+
+        encrypted_data = request.data
+       
+        decrypted_data = FERNET.decrypt(encrypted_data).decode("utf-8")
+        data = json.loads(decrypted_data)               
+
+        for lesson in lesson_list:
+            
+            if lesson["subject"] == subject:
+                
+                # Don't change automatically assigned lesson ID and subject.
+                lesson["lesson_id"] = lesson["lesson_id"] 
+                lesson["subject"] = lesson["subject"]
+         
+                # Conditions set to change values if keyword arguments provided
+                # otherwise keep them the same.                                
+                if data.get("title") != None:                    
+                    lesson["title"] = data.get("title")
+                else:
+                    lesson["title"] = lesson["title"]
+         
+                if data.get("question_1") != "":
+                    lesson["questions"][0] = data.get("question_1")                        
+                else:
+                    lesson["questions"] = lesson["questions"]
+             
+                if data.get("question_2") != "":
+                    lesson["questions"][1] = data.get("question_1")                        
+                else:
+                    lesson["questions"] = lesson["questions"]
+         
+                if data.get("question_3") != "":
+                    lesson["questions"][2] = data.get("question_3")                        
+                else:
+                    lesson["questions"] = lesson["questions"]
+             
+                if data.get("question_4") != "":
+                    lesson["questions"][3] = data.get("question_4")                        
+                else:
+                    lesson["questions"] = lesson["questions"]
+                         
+                if data.get("question_5") != "":
+                    lesson["questions"][4] = data.get("question_5")                        
+                else:
+                    lesson["questions"] = lesson["questions"]
+
+                if data.get("answer_1") != "":
+                    lesson["answers"][0] = data.get("answer_1")                        
+                else:
+                    lesson["answers"] = lesson["answers"]
+             
+                if data.get("answer_2") != "":
+                    lesson["answers"][1] = data.get("answer_2")                        
+                else:
+                    lesson["answers"] = lesson["answers"]
+             
+                if data.get("answer_3") != "":
+                    lesson["answers"][2] = data.get("answer_3")                        
+                else:
+                    lesson["answers"] = lesson["answers"]
+             
+                if data.get("answer_4") != "":
+                    lesson["answers"][3] = data.get("answer_4")                        
+                else:
+                    lesson["answers"] = lesson["answers"]
+             
+                if data.get("answer_5") != "":
+                    lesson["answers"][4] = data.get("answer_5")                        
+                else:
+                    lesson["answers"] = lesson["answers"]
+                                                                         
+                if data.get("grade") != None:
+                    lesson["grade"] = data.get("grade")
+            
+                else:
+                    lesson["grade"] = lesson["grade"]                                           
+         
+                     
+        save_list("lesson_list", lesson_list)
+                                              
+        return lesson, 200                
+                
+                
 api.add_resource(Users, "/<string:user_list>")
 api.add_resource(Admin, "/users/admins/<string:email>") 
 api.add_resource(Teacher, "/users/teachers/<string:email>")
@@ -335,6 +524,7 @@ api.add_resource(AssignedStudent, "/users/teachers/assignedstudent/<int:teacher_
 api.add_resource(Student, "/users/students/<string:email>")
 api.add_resource(AssignedTeacher, "/users/students/assignedteacher/<int:student_id>")
 api.add_resource(Lesson, "/lessons/<subject>")
+api.add_resource(SecureLesson, "/lessons/secure/<subject>")
 app.run(debug=True)
 
 

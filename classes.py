@@ -529,9 +529,9 @@ class Lesson(): ################################ Need to change security to True
     
 
     def change_lesson_content(self, title=None, lesson_input=None, 
-                              question_1=None, question_2=None, 
-                              question_3=None, question_4=None, 
-                              question_5=None, answer_1="", answer_2="",
+                              question_1="", question_2="", 
+                              question_3="", question_4="", 
+                              question_5="", answer_1="", answer_2="",
                               answer_3="", answer_4="", answer_5="",
                               grade=None):
         
@@ -552,8 +552,7 @@ class Lesson(): ################################ Need to change security to True
             "answer_3": answer_3,
             "answer_4": answer_4,
             "answer_5": answer_5,
-            "grade": grade,
-            "encrypted": self.security # Let server know if this data is encrypted.
+            "grade": grade            
         }
         
         headers = {"Content-Type": "application/json"}
@@ -562,7 +561,7 @@ class Lesson(): ################################ Need to change security to True
             self.secure_lesson.check_limit()
             data_string = json.dumps(new_lesson_data).encode("utf-8")
             new_lesson_data = FERNET.encrypt(data_string)
-            response = requests.patch(f"{self.API_URL}/lessons/{self.subject}", headers=headers, data=new_lesson_data)
+            response = requests.patch(f"{self.API_URL}/lessons/secure/{self.subject}", headers=headers, data=new_lesson_data)
             
         else: 
             response = requests.patch(f"{self.API_URL}/lessons/{self.subject}", headers=headers, json=new_lesson_data)
@@ -575,16 +574,18 @@ class Lesson(): ################################ Need to change security to True
             # Update self.lessons with data added via API to lesson_lis.json
             if self.security:
                 self.secure_lesson.check_limit()
+                
             self.lessons = requests.get(f"{self.API_URL}/lessons/{self.subject}",   
                                              headers={"Content-Type": "application/json"}).json()   
+
+            self.lessons
 
             self.format_lesson_output(lesson_info_to_return, self.retrieve_my_active_lesson())
                         
             info_str = "\n".join(lesson_info_to_return) 
             
             print("\n***Lesson Updated!***\n")
-            return print(info_str)            
-        
+            return print(info_str)
         else:
             return print(("Oops! Something went wrong."))
 
