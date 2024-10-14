@@ -11,36 +11,49 @@ Changes made to lessen API calls made /
 
 Security class featuring rate limiter added within all classes - prevent DDOS /
 
+Sanitise input method now working /
+
 SANITISE INPUT NOT WORKING - WHY? Look at security object logic - is it working???? Undo? /
 
 USE HTTPS?? WHY IS IT NOT LETTING ME? TOO MANY INITIAL CALLS TO API? / X
 
-Look at other security requirements 	- encrypt (key: pkwt6CJu5tFq1fRE_rdZiqakYemthvhdW_QlzkQUbjY=)
+Look at other security requirements 	- encrypt (key: pkwt6CJu5tFq1fRE_rdZiqakYemthvhdW_QlzkQUbjY=) /
 
 					- hash passwords /
 
-					- mfa
-			
-					- prevent against evil regex - evaluate time??
 
-Make sure all commented
 
-Make sure un-needed uni api endpoints removed
 
-Make sure PEP-8 compliant, mainly editing long lines - ask AI how!
+Mask pw input for new student /					
 
-AM I INHERITING __init__() correctly for User children?? Too many lines? Ask AI
+Make sure PEP-8 compliant, mainly editing long lines /
 
-Final manual test - any problems with lesson methods after changing api paths?
+content-type: appl... needs a space! check! /
+
+Final manual test - any problems with lesson methods after changing api paths? /
+
+
+
+Make sure all commented [done up to class.py 161 - done app.py and menu_classes.py]
+
+commit!
+
+Rename menu instantiation cli.py 
+
+Final Final manual test
+
 
 Look at how to safely merge branches so that current is main then upload to GitHub
 
 Make report! - ensure references from code. Ref PEP-8 after mentioning? ENSURE TO INCLUDE ENCRYPTION KEY (pkwt6CJu5tFq1fRE_rdZiqakYemthvhdW_QlzkQUbjY=) AND INSTRUCTIONS ON WHERE TO SAVE IT (.BAT FILE)
+REFERENCE PROPERLY FOR BOTTOM 2 METHODS OF MAIN.PY/CLASSES, include passwords
 
 
 If time:
-
+- mfa			
+- prevent against evil regex - evaluate time??
 ensure passwords contain certain characters, using security feature.
 Add an exit option
 solve: student_3 and 4 not showing current lesson and not able to answer questions
 solve: updated student list not displaying after deleting student
+add view_teachers() method for admin

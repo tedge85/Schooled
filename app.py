@@ -26,13 +26,15 @@ def save_list(user_or_lesson, list_name):
 
     with open(f"{user_or_lesson}.json", "w") as f:
         json.dump(list_name, f, indent=4)
-        
+
+# Initiate list variables by loading from json files        
 admin_list = load_list("admin_list")
 teacher_list = load_list("teacher_list")
 student_list = load_list("student_list")
 lesson_list = load_list("lesson_list")
 
-
+# Lists stored in user_lists to allow for dynamic access e.g. 'if user_list
+# in user_lists:...'
 user_lists = {
     "student_list": student_list,
     "teacher_list": teacher_list,
@@ -43,7 +45,9 @@ user_lists = {
 ################ API endpoints. #####################
 class Users(Resource):
     
-    def get(self, user_list):        
+    def get(self, user_list):
+        '''Retrieves one of the lists from user_lists, dependeing on input'''    
+
         if user_list in user_lists:
             return user_lists[user_list], 200                        
         return f"{user_list} not found", 404
@@ -51,6 +55,9 @@ class Users(Resource):
 class Admin(Resource):
     
     def get(self, email):               
+        '''Retrieves admin_list'''
+        admin_list = load_list("admin_list")
+
         for admin in admin_list:
             if email == admin["login_email"]:
                 
@@ -59,10 +66,10 @@ class Admin(Resource):
         return "User not found", 404
 
 
-    def post(self, email):
+    def post(self, email):        
         '''Adds a student to student_list.'''
         
-        student_list = user_lists["student_list"]
+        student_list = load_list("student_list")
         
         parser = reqparse.RequestParser()
         parser.add_argument("hashed_password")
@@ -90,13 +97,12 @@ class Admin(Resource):
 
         for s in student_list:
             if s["fname"] == args["fname"] and s["lname"] == args["lname"]:
-                return f"User with name '{args['fname']} {args['lname']}' already exists", 400                                               
+                return f"User with name '{args['fname']} {args['lname']}' "
+                f"already exists", 400                                               
                         
         student_list.append(student)
         
-        save_list("student_list", student_list)        
-        
-        student_list = load_list("student_list")
+        save_list("student_list", student_list)                        
             
         return student, 201
     
@@ -104,19 +110,17 @@ class Admin(Resource):
     def delete(self, email):
         '''Removes given student from student_list.'''
         
-        student_list = user_lists["student_list"]
+        student_list = load_list("student_list")
 
         initial_list_size = len(student_list)
 
-        student_list = [student for student in student_list if student["login_email"] != email]
+        student_list = [student for student in student_list 
+                        if student["login_email"] != email]
                     
         
         if len(student_list) < initial_list_size:
             
-            save_list("student_list", student_list)
-        
-            student_list = load_list("student_list")    
-            
+            save_list("student_list", student_list)                                 
             
             return "\n**Student deleted**\n", 200
         
@@ -124,13 +128,56 @@ class Admin(Resource):
             
             return "!!Student not found!!", 404
             
-        
 
-class Teacher(Resource):
-    '''Retrieves single teacher data from teacher_list.'''
+class SecureAdmin(Resource):
+    '''Data sent here is encrypted.'''
+
+
+    def post(self, email):
+        '''Securely adds a student to student_list.'''
+        
+        student_list = load_list("student_list")
+
+        encrypted_data = request.data
+       
+        decrypted_data = FERNET.decrypt(encrypted_data).decode("utf-8")
+        data = json.loads(decrypted_data) 
+
+        student = {
+            "login_email": email,                  
+            "hashed_password": data.get("hashed_password"),
+            "id": data.get("id"),
+            "fname": data.get("fname"),
+            "lname": data.get("lname"),
+            "DOB": data.get("DOB"),
+            "subject": data.get("subject"),                
+            "current_lesson_id": data.get("current_lesson_id"),
+            "assigned_teacher_id": data.get("assigned_teacher_id")
+         }
+
+        for s in student_list:
+            s_fname = s["fname"].lower()
+            s_lname = s["lname"].lower()
+            fname_input = data.get("fname").lower()
+            lname_input = data.get("lname").lower()
+            
+            if s_fname ==  fname_input and s_lname == lname_input:
+                return f"User with name '{data.get('fname')} "
+                f"{data.get('lname')}' already exists", 400                                               
+                        
+        student_list.append(student)
+        
+        save_list("student_list", student_list)                      
+            
+        return student, 201
+
+class Teacher(Resource):    
     
     def get(self, email):
+        '''Retrieves single teacher data from teacher_list.'''
         
+        teacher_list = load_list("teacher_list")
+
         for teacher in teacher_list:
             if email == teacher["login_email"]:
                 
@@ -141,7 +188,8 @@ class Teacher(Resource):
         return "User not found", 404        
     
     def patch(self, email):                
-
+        '''Allows student ids to be assigned to teachers.'''
+        
         teacher_list = load_list("teacher_list")
 
         parser = reqparse.RequestParser()        
@@ -152,7 +200,9 @@ class Teacher(Resource):
 
         
         original_list_len = 0
-        amended_list_len = 0 # Initialised with low value so that defaults to not meet below condition if something goes wrong. 
+        amended_list_len = 0 # Initialised with low value so that defaults 
+                             # to not meet below condition if something goes 
+                             # wrong. 
         
         for teacher in teacher_list:
             if int(teacher["id"]) == args["assigned_teacher_id"]:
@@ -165,25 +215,67 @@ class Teacher(Resource):
                 
         if original_list_len < amended_list_len:
             
-            save_list("teacher_list", teacher_list)
-            
-            teacher_list = load_list("teacher_list")
+            save_list("teacher_list", teacher_list)                        
             
             return "**List amended**", 200
         
         else:
+            return "Teacher not found", 404
+
+        
+class SecureTeacher(Resource):
+    '''Securely allows student ids to be assigned to teachers.'''
+    
+    def patch(self, email):
+        
+        teacher_list = load_list("teacher_list")
+
+        encrypted_data = request.data
+       
+        decrypted_data = FERNET.decrypt(encrypted_data).decode("utf-8")
+        data = json.loads(decrypted_data)
+        
+        original_list_len = 0
+        amended_list_len = 0 # Initialised with low value so that defaults to 
+                             # not meet below condition if something goes 
+                             # wrong. 
+        
+        for teacher in teacher_list:
+            if int(teacher["id"]) == data.get("assigned_teacher_id"):
+                
+                original_list_len = len(teacher("student_ids"))                        
+                
+                teacher["student_ids"].append(data.get("student_id"))
+
+                amended_list_len = len(teacher["student_ids"])        
+                
+        if original_list_len < amended_list_len:
+            
+            save_list("teacher_list", teacher_list)                        
+            
+            return "**List amended**", 200
+        
+        else:
+            
             return "Teacher not found", 404
         
 
 class AssignedStudent(Resource): 
     
     def get(self, teacher_id):        
-                
+        '''Retrieves students assigned to given teachers.'''
+        
+        student_list = load_list("student_list")
+
         student_names = []
         for student in student_list:
             
              if teacher_id == int(student["assigned_teacher_id"]):
-                student_names.append(f"\n{student['fname']} {student['lname']}\nActive lesson ID: {student['current_lesson_id']}\nEmail: {student['login_email']}________________________")
+                student_names.append(f"\n{student['fname']} {student['lname']}"
+                                     f"\nActive lesson ID:" 
+                                     f"{student['current_lesson_id']}\nEmail: "
+                                     f"{student['login_email']}\n_____________"
+                                     "_________")
                 
         if student_names:
             return student_names   
@@ -192,7 +284,11 @@ class AssignedStudent(Resource):
 
 class Student(Resource):
     
-    def get(self, email):                
+    def get(self, email):
+        '''Retrieves single student information.'''
+        
+        student_list = load_list("student_list")
+
         for student in student_list:
             if email == student["login_email"]:
                 
@@ -207,6 +303,9 @@ class AssignedTeacher(Resource): # change to input just student id?
     
      def get(self, student_id):        
         '''Retrieves students' assigned teachers from teacher_list.'''      
+        
+        teacher_list = load_list("teacher_list")
+        
         for teacher in teacher_list:
             #for num in teacher["ids"]:                          
              if int(student_id) in teacher["student_ids"]:
@@ -216,7 +315,8 @@ class AssignedTeacher(Resource): # change to input just student id?
      
      def patch(self, student_id):
         '''Removes a deleted student's id from teacher['student_ids']'''                                     
-        teacher_list = user_lists["teacher_list"]
+        
+        teacher_list = load_list("teacher_list")
         
         original_list_len = 0
         amended_list_len = 0
@@ -225,13 +325,13 @@ class AssignedTeacher(Resource): # change to input just student id?
             
             if student_id in teacher["student_ids"]:
                 original_list_len = len(teacher["student_ids"])
-                teacher["student_ids"] = [id_value for id_value in teacher["student_ids"] if id_value != student_id]
+                teacher["student_ids"] = [id_value for id_value in 
+                                          teacher["student_ids"] if 
+                                          id_value != student_id]
                 amended_list_len = len(teacher["student_ids"])
                 continue
         
-        save_list("teacher_list", teacher_list)
-        
-        teacher_list = load_list("teacher_list")
+        save_list("teacher_list", teacher_list)                
 
         if original_list_len > amended_list_len:
             return "\n***ID deleted***\n", 200
@@ -243,6 +343,7 @@ class AssignedTeacher(Resource): # change to input just student id?
 class Lesson(Resource):
     
     def get(self, subject):
+        '''Retrieves single lessons.'''
         
         lesson_list = load_list("lesson_list")
         
@@ -254,7 +355,10 @@ class Lesson(Resource):
             return "Lessons not found", 404
 
     def post(self, subject):
+        '''Posts new lessons to lesson_list.'''
         
+        lesson_list = load_list("lesson_list")
+
         parser = reqparse.RequestParser()
         parser.add_argument("lesson_id", type=int)
         parser.add_argument("title", type=str)
@@ -277,21 +381,24 @@ class Lesson(Resource):
                 "subject": subject,
                 "title": args["title"],
                 "input": args["input"],
-                "questions": [args["question_1"],args["question_2"], args["question_3"], args["question_4"], args["question_5"]],
-                "answers": [args["answer_1"], args["answer_2"], args["answer_3"], args["answer_4"], args["answer_5"]],
+                "questions": [args["question_1"],args["question_2"], 
+                              args["question_3"], args["question_4"], 
+                              args["question_5"]],
+                "answers": [args["answer_1"], args["answer_2"], 
+                            args["answer_3"], args["answer_4"], 
+                            args["answer_5"]],
                 "grade": args["grade"]
                 }
         
         lesson_list.append(lesson)        
 
-        save_list("lesson_list", lesson_list)
-        
-        lesson_list = load_list("lesson_list")
+        save_list("lesson_list", lesson_list)                
 
         return lesson, 201
     
+
     def patch(self, subject):     
-        
+        '''Updates lesson content in lesson_list.'''
 
         lesson_list = load_list("lesson_list")
         
@@ -314,7 +421,9 @@ class Lesson(Resource):
         args = parser.parse_args()                
  
         for lesson in lesson_list:
-            if str(lesson["subject"]).lower() == str(subject).lower() and (lesson["lesson_id"]) == args["lesson_id"]:                
+            l_subject = str(lesson["subject"]).lower()
+            l_id = lesson["lesson_id"]
+            if l_subject == str(subject).lower() and l_id == args["lesson_id"]:                
          
                 # Don't change automatically assigned lesson ID and subject.
                 lesson["lesson_id"] = lesson["lesson_id"] 
@@ -382,56 +491,48 @@ class Lesson(Resource):
             
                 else:
                     lesson["grade"] = lesson["grade"]                                           
-                
-                
-                                                   
+                                                                                   
         save_list("lesson_list", lesson_list)
-                 
-                
+                                 
         return lesson, 200
                                 
                               
 class SecureLesson(Resource):
+    '''Data sent here is encrypted.'''
     
     def post(self, subject):
+        '''Securely posts new lessons to lesson_list.'''
         
-        parser = reqparse.RequestParser()
-        parser.add_argument("lesson_id", type=int)
-        parser.add_argument("title", type=str)
-        parser.add_argument("input", type=str)
-        parser.add_argument("question_1", type=str)
-        parser.add_argument("question_2", type=str)
-        parser.add_argument("question_3", type=str)
-        parser.add_argument("question_4", type=str)
-        parser.add_argument("question_5", type=str)
-        parser.add_argument("answer_1", type=str)
-        parser.add_argument("answer_2", type=str)
-        parser.add_argument("answer_3", type=str)
-        parser.add_argument("answer_4", type=str)
-        parser.add_argument("answer_5", type=str)
-        parser.add_argument("grade", type=str)
-        args = parser.parse_args()
-        
+        lesson_list = load_list("lesson_list")
+
+        encrypted_data = request.data
+       
+        decrypted_data = FERNET.decrypt(encrypted_data).decode("utf-8")
+        data = json.loads(decrypted_data)               
+                
         lesson = {
-                "lesson_id": args["lesson_id"],
+                "lesson_id": data.get("lesson_id"),
                 "subject": subject,
-                "title": args["title"],
-                "input": args["input"],
-                "questions": [args["question_1"],args["question_2"], args["question_3"], args["question_4"], args["question_5"]],
-                "answers": [args["answer_1"], args["answer_2"], args["answer_3"], args["answer_4"], args["answer_5"]],
-                "grade": args["grade"]
+                "title": data.get("title"),
+                "input": data.get("input"),
+                "questions": [data.get("question_1"), data.get("question_2"),
+                              data.get("question_3"), data.get("question_4"), 
+                              data.get("question_5")],
+                "answers": [data.get("answer_1"), data.get("answer_2"), 
+                            data.get("answer_3"), data.get("answer_4"), 
+                            data.get("answer_5")],
+                "grade": data.get("grade")
                 }
         
         lesson_list.append(lesson)        
 
-        save_list("lesson_list", lesson_list)
-        
-        lesson_list = load_list("lesson_list")
+        save_list("lesson_list", lesson_list)            
 
         return lesson, 201
 
 
     def patch(self, subject):
+        '''Securely updates lesson content in lesson_list.'''
         
         lesson_list = load_list("lesson_list")
 
@@ -509,8 +610,7 @@ class SecureLesson(Resource):
                     lesson["grade"] = data.get("grade")
             
                 else:
-                    lesson["grade"] = lesson["grade"]                                           
-         
+                    lesson["grade"] = lesson["grade"]                                                    
                      
         save_list("lesson_list", lesson_list)
                                               
@@ -519,14 +619,15 @@ class SecureLesson(Resource):
                 
 api.add_resource(Users, "/<string:user_list>")
 api.add_resource(Admin, "/users/admins/<string:email>") 
+api.add_resource(SecureAdmin, "/users/secure/admins/<string:email>")
 api.add_resource(Teacher, "/users/teachers/<string:email>")
-api.add_resource(AssignedStudent, "/users/teachers/assignedstudent/<int:teacher_id>")
+api.add_resource(SecureTeacher, "/users/secure/teachers/<string:email>")
+api.add_resource(AssignedStudent, "/users/teachers/assignedstudent/"
+                                                 "<int:teacher_id>")
 api.add_resource(Student, "/users/students/<string:email>")
-api.add_resource(AssignedTeacher, "/users/students/assignedteacher/<int:student_id>")
+api.add_resource(AssignedTeacher, "/users/students/assignedteacher/"
+                                                 "<int:student_id>")
 api.add_resource(Lesson, "/lessons/<subject>")
 api.add_resource(SecureLesson, "/lessons/secure/<subject>")
+
 app.run(debug=True)
-
-
-
-

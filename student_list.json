@@ -53,5 +53,16 @@
         "subject": "Computer Science",
         "current_lesson_id": 1,
         "assigned_teacher_id": 4
+    },
+    {
+        "login_email": "student6@school.co.uk",
+        "hashed_password": "699919f851b7a25a3967df9e9ecca1eccfe45bed5cb35517ca214cd164fad64d",
+        "id": 905,
+        "fname": "New",
+        "lname": "Student",
+        "DOB": "12.12.98",
+        "subject": "Computer Science",
+        "current_lesson_id": 1,
+        "assigned_teacher_id": 4
     }
 ]

@@ -9,8 +9,8 @@
         "subject": "English",
         "current_lesson_id": 1,
         "student_ids": [
-          900,
-          901
+            900,
+            901
         ]
     },
     {
@@ -23,8 +23,8 @@
         "subject": "Maths",
         "current_lesson_id": 1,
         "student_ids": [
-          902,
-          903
+            902,
+            903
         ]
     },
     {
@@ -48,7 +48,7 @@
         "subject": "Computer Science",
         "current_lesson_id": 1,
         "student_ids": [
-          904
+            904
         ]
     }
 ]

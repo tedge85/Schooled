@@ -4,14 +4,13 @@ import pwinput
 
 from classes import Admin, Teacher, Student, Lesson, Security
 
-###### CHange print statments  to returns?
-
 class Menu:
     '''Factory class - children classes inherit options and corresponding 
             methods.'''
+            
     def __init__(self, option_1, option_2, method_1, method_2):
+        '''Allows for the creation of main menus and sub-menus'''
         
-       
         self.option_1 = option_1
         self.option_2 = option_2
                        
@@ -20,10 +19,12 @@ class Menu:
 
        
 class AdminMenu(Menu):
-    
-    def __init__(self, option_1, option_2, option_3, option_4, option_5, method_1, method_2, method_3, method_4, method_5):
-        '''Allows for the creation of main menus and sub-menus'''
+    '''Inherits from Menu and adds extra options and methods.'''
+
+    def __init__(self, option_1, option_2, option_3, option_4, option_5,
+                 method_1, method_2, method_3, method_4, method_5):        
         super().__init__(option_1, option_2, method_1, method_2)                                                    
+        '''Allows for the creation of main menus and sub-menus'''
         
         self.option_3 = option_3
         self.option_4 = option_4
@@ -69,13 +70,15 @@ class AdminMenu(Menu):
             print("\n!! Choose a valid option. !!\n")     
             
 class TeacherMenu(AdminMenu):
-    
+    '''Inherits from AdminMenu and adds extra options and methods.'''
+
     def __init__(self, option_1, option_2, option_3, option_4, option_5, 
                  option_6, option_7, method_1, method_2, method_3, method_4,
-                 method_5, method_6, method_7):
-        '''Allows for the creation of main menus and sub-menus'''
+                 method_5, method_6, method_7):        
         super().__init__(option_1, option_2, option_3, option_4, option_5,
                          method_1, method_2, method_3, method_4, method_5)
+        '''Allows for the creation of main menus and sub-menus'''
+        
         self.option_6 = option_6
         self.option_7 = option_7
                        
@@ -125,12 +128,15 @@ class TeacherMenu(AdminMenu):
             print("\n!! Choose a valid option. !!\n")     
 
 class StudentMenu(AdminMenu):
+    '''Inherits from AdminMenu without modifying.'''
     
-    def __init__(self, option_1, option_2, option_3, option_4, option_5, method_1, method_2, method_3, method_4, method_5):
-        '''Allows for the creation of main menus and sub-menus'''
+    def __init__(self, option_1, option_2, option_3, option_4, option_5, 
+                 method_1, method_2, method_3, method_4, method_5):        
         
-        super().__init__(option_1, option_2, option_3, option_4, option_5, method_1, method_2, method_3, method_4, method_5)
+        super().__init__(option_1, option_2, option_3, option_4, option_5,
+                         method_1, method_2, method_3, method_4, method_5)
 
+        '''Allows for the creation of main menus and sub-menus'''
 
 class LoginMenu():
     
@@ -143,8 +149,8 @@ class LoginMenu():
         
         self.secure_app = Security(self.attempts)
         
-        # If security activated by user input, instantiate security object and call method to
-        # check login attempts, locking account if more than 4 made.
+        # If security activated by user input, instantiate security object and
+        # call method to check login attempts, locking account if more than 4 made.
         if self.security:                                 
             self.secure_app.password_attempts_check()
                                                               
@@ -158,7 +164,9 @@ class LoginMenu():
         if self.security == False:
             while True:
                 try:
-                    choice = input("Type 's' to switch Security on, or press 'c' to continue: ").lower()
+                    choice = input("\n***Type 's' to switch Security on," 
+                                   " or press 'c'"
+                                   " to continue***: ").lower()
                     if choice == 's':
                        self.security = True
                        break
@@ -168,9 +176,11 @@ class LoginMenu():
                     print("Pick a valid choice!")
                 
         self.login_email = str(input("\n* Enter your email address: "))
-        password = pwinput.pwinput("Enter your password: ") # Mask password input.
+        password = pwinput.pwinput("* Enter your password: ") # Mask password
+                                                            # input.
         
-        # Hash the password so that it can be compared to the stored hashed password.
+        # Hash the password so that it can be compared to the stored hashed 
+        # password.
         self.password = self.secure_app.hash_password(str(password))
 
         # If user identified as admin, API call made to obtain list of admin 
@@ -178,29 +188,35 @@ class LoginMenu():
         if "admin" in str(self.login_email):            
             user_type ="admin"
             
-            user_list = requests.get(f"{self.API_URL}/admin_list", headers={"Content-Type": "application/json"}).json()
+            user_list = requests.get(f"{self.API_URL}/admin_list", 
+                        headers={"Content-Type":"application/json"}).json()
         
         # If user identified as teacher, API call made to obtain list of 
         # teacher users and details.
         elif "teacher" in str(self.login_email):            
             user_type ="teacher"
-            user_list = requests.get(f"{self.API_URL}/teacher_list", headers={"Content-Type": "application/json"}).json()
+            user_list = requests.get(f"{self.API_URL}/teacher_list",
+                        headers={"Content-Type":"application/json"}).json()
         
         # If user identified as teacher, API call made to obtain list of 
         # teacher users and details.
         elif "student" in str(self.login_email):
             user_type ="student"
-            user_list = requests.get(f"{self.API_URL}/student_list", headers={"Content-Type": "application/json"}).json()
+            user_list = requests.get(f"{self.API_URL}/student_list",
+                        headers={"Content-Type": "application/json"}).json()
             
         else:
             print("That email address is not valid.")
             
-            # If security is activated, monitor login attempts to later pass to security object
-            # and password_attempts_check method to ensure account lockout after 4 attempts.
+            # If security is activated, monitor login attempts to later pass
+            # to security object and password_attempts_check method to ensure
+            # account lockout after 4 attempts.
+            
             if self.security:
                 self.attempts += 1
                 
-                # Reset onoce 5 attempts reached, so that counter starts again after lock-out.
+                # Reset onoce 5 attempts reached, so that counter starts again
+                # after lock-out.
                 if self.attempts == 5:
                     self.attempts = 1
                     
@@ -213,8 +229,9 @@ class LoginMenu():
                                                     
         # Locate user's login details.
         for user in user_list:            
-            
-            if str(user["login_email"]) == self.login_email and str(user["hashed_password"]) == self.password:
+            login_email = str(user["login_email"])
+            password = str(user["hashed_password"]) 
+            if login_email == self.login_email and password == self.password:
                 
                 # Instantiate relevant user object to gain access to its 
                 # specific methods, passing these to the {user_type} Menu so that 
@@ -228,7 +245,8 @@ class LoginMenu():
                     # set to True.                   
                     self.secure_app.security = self.security
                     
-                    user = Admin(self.login_email, self.password, self.secure_app, security=self.security)
+                    user = Admin(self.login_email, self.password, 
+                                 self.secure_app, security=self.security)
 
                     user_menu = AdminMenu("Profile", "Name search", 
                                           "Enrol new student", 
@@ -246,7 +264,8 @@ class LoginMenu():
                                                             
                     self.secure_app.security = self.security 
                     
-                    user = Teacher(self.login_email, self.password, self.secure_app, security=self.security)
+                    user = Teacher(self.login_email, self.password, 
+                                   self.secure_app, security=self.security)
 
                     # Lesson object instantiated to give non-admin user access
                     # to lesson methods.
@@ -270,7 +289,8 @@ class LoginMenu():
                     
                     self.secure_app.security = self.security
                     
-                    user = Student(self.login_email, self.password, self.secure_app, security=self.security)                                        
+                    user = Student(self.login_email, self.password, 
+                                   self.secure_app, security=self.security)                                        
                                         
                     lesson = Lesson(user.subject, security=self.security)
 
