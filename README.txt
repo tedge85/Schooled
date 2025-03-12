@@ -1,4 +1,4 @@
-'Schooled' is a Python command-line prototype Learning Management System featuring secure software development priniciples.
+'Schooled' is a Python command-line prototype Learning Management System featuring secure software development principles.
 
 FEATURES
 -------------------
