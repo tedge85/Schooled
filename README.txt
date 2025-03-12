@@ -141,9 +141,11 @@ windows-curses==2.3.2
 USAGE INSTRUCTIONS
 -------------------
 -------------------
+- Set up a virtual environment;
+- Activate the virtual environment;
+- Install requirements from the requirements.txt file;
 - Run app.py from terminal.
 - Run main.py from Powershell to view first menu – uncomment final line to see app run in Secure mode and test Brute Force attack.
-
 - Navigate menus using letter choices.
 
 *Encryption key should be stored in venv/Scripts/activate.bat file as shown below**
