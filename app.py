@@ -1,6 +1,7 @@
 import json
 import os
 import base64
+from ast import Try
 from cryptography.fernet import Fernet
 from requests import delete
 from flask import Flask, jsonify, request
@@ -11,6 +12,8 @@ api = Api(app)
 
 KEY = os.environ.get("ENCRYPTION_KEY")
 FERNET = Fernet(KEY.encode())
+PATH_TO_UPLOAD_TO = r"C:\Users\User\Documents\University of Essex Online\Secure Software Development Module\schooled_lms\Homework"
+app.config["UPLOAD_FOLDER"] = PATH_TO_UPLOAD_TO
 
 def load_list(list_name):
     '''Loads json files - for users or lessons - into dictionaries.'''
@@ -298,6 +301,22 @@ class Student(Resource):
             
         return "User not found", 404                                                          
         
+    def post(self, email):
+        '''Saves homework file.'''
+        
+        def upload_file(file):
+            if "file" not in request.files:
+                return "!!No file posted!!"
+    
+        file = request.files["file"]
+    
+        if file.filename == "":
+            return "File not included"
+    
+        filename = file.filename 
+        file.save(os.path.join(app.config["UPLOAD_FOLDER"], filename))
+        
+        return "***File uploaded successfully!***"
 
 class AssignedTeacher(Resource): # change to input just student id?
     

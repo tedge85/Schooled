@@ -64,5 +64,38 @@
         "subject": "Computer Science",
         "current_lesson_id": 1,
         "assigned_teacher_id": 4
+    },
+    {
+        "login_email": "student7@school.co.uk",
+        "hashed_password": "HeavenBoot65",
+        "id": 906,
+        "fname": "Unsecure",
+        "lname": "Student",
+        "DOB": "06.06.96",
+        "subject": "Science",
+        "current_lesson_id": 1,
+        "assigned_teacher_id": 3
+    },
+    {
+        "login_email": "student8@school.co.uk",
+        "hashed_password": "BigNine58",
+        "id": 907,
+        "fname": "Unsecured",
+        "lname": "Student",
+        "DOB": "12.11.98",
+        "subject": "Maths",
+        "current_lesson_id": 1,
+        "assigned_teacher_id": 2
+    },
+    {
+        "login_email": "student8@school.co.uk",
+        "hashed_password": "ede5e10e89b7381369539d3cb73e409e82240d0e4aa4dae20f69ba3d453ccd1d",
+        "id": 907,
+        "fname": "Secured",
+        "lname": "Student",
+        "DOB": "14.02.99",
+        "subject": "Computer Science",
+        "current_lesson_id": 1,
+        "assigned_teacher_id": 4
     }
 ]

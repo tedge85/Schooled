@@ -229,5 +229,26 @@
             "\nEnter an answer for question 5: \n"
         ],
         "grade": null
+    },
+    {
+        "lesson_id": 6,
+        "subject": "English",
+        "title": "Admin.view_students()",
+        "input": "s",
+        "questions": [
+            "d",
+            "sa",
+            "",
+            "s",
+            "d"
+        ],
+        "answers": [
+            "",
+            "",
+            "",
+            "",
+            ""
+        ],
+        "grade": null
     }
 ]

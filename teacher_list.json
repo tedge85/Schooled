@@ -24,7 +24,8 @@
         "current_lesson_id": 1,
         "student_ids": [
             902,
-            903
+            903,
+            907
         ]
     },
     {
@@ -36,7 +37,9 @@
         "DOB": "11.02.85",
         "subject": "Science",
         "current_lesson_id": 1,
-        "student_ids": []
+        "student_ids": [
+            906
+        ]
     },
     {
         "login_email": "teacher4@school.co.uk",
